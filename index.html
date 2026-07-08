@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>닥터배 납품처 분포 지도</title>
+
+<!-- ============================================================
+     [설정] 아래 KAKAO_KEY 에 발급받은 카카오 JavaScript 키를 넣으세요.
+     발급: https://developers.kakao.com  →  내 애플리케이션 → 앱 키 → JavaScript 키
+     그리고 [플랫폼 → Web] 에 이 파일을 여는 도메인을 등록해야 지도가 뜹니다.
+       · 로컬 파일로 열 때 등록 도메인: http://localhost  (또는 file:// 는 미지원 → 로컬서버 권장)
+       · GitHub Pages 배포 시:            https://아이디.github.io
+     ============================================================ -->
+<script>
+  const KAKAO_KEY = "c17fc06160320aad6520ed199509ed36";
+</script>
+
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+<style>
+:root{
+  --paper:#F7F9F5; --panel:#FFFFFF; --ink:#16211C; --sage:#5E6F64;
+  --line:#E1E7DD; --line2:#EDF1E9;
+  --centella:#2F7D5B; --centella-deep:#1F5C41; --centella-soft:#EAF3ED;
+  --amber:#C7862F;
+  --shadow:0 1px 2px rgba(22,33,28,.04),0 8px 28px rgba(22,33,28,.07);
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Pretendard Variable',Pretendard,system-ui,sans-serif;
+  color:var(--ink); background:var(--paper);
+  display:flex; flex-direction:column; height:100vh; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- header ---------- */
+header{
+  flex:0 0 auto; display:flex; align-items:center; gap:22px;
+  padding:14px 24px; background:var(--panel); border-bottom:1px solid var(--line);
+  z-index:20;
+}
+.brand{display:flex; align-items:baseline; gap:10px}
+.brand .leaf{
+  width:26px;height:26px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#4FA97C,var(--centella-deep));
+  align-self:center; box-shadow:0 0 0 4px var(--centella-soft);
+}
+.brand h1{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.brand span{font-size:12.5px;color:var(--sage);font-weight:500}
+.stats{display:flex; gap:26px; margin-left:auto}
+.stat{display:flex; flex-direction:column; align-items:flex-end}
+.stat b{font-family:var(--mono);font-size:19px;font-weight:600;line-height:1;letter-spacing:-.01em}
+.stat small{font-size:11px;color:var(--sage);margin-top:3px;letter-spacing:.02em}
+
+/* ---------- layout ---------- */
+.wrap{flex:1 1 auto; display:flex; min-height:0}
+aside{
+  flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line);
+  display:flex; flex-direction:column; min-height:0;
+}
+.search{padding:14px 16px 10px; border-bottom:1px solid var(--line2)}
+.search input{
+  width:100%; padding:10px 12px; font-size:13.5px; font-family:inherit;
+  border:1px solid var(--line); border-radius:9px; background:#FBFCFA; color:var(--ink);
+  transition:border-color .15s;
+}
+.search input:focus{outline:none;border-color:var(--centella)}
+.search input::placeholder{color:#9AA79E}
+
+.list{flex:1 1 auto; overflow-y:auto; padding:6px 8px 20px}
+.list::-webkit-scrollbar{width:9px}
+.list::-webkit-scrollbar-thumb{background:#D6DED0;border-radius:9px;border:2px solid var(--panel)}
+
+.region{margin:4px 0 2px}
+.region-head{
+  display:flex; align-items:center; gap:9px; width:100%;
+  padding:9px 10px; background:none; border:none; cursor:pointer;
+  font-family:inherit; color:var(--ink); text-align:left; border-radius:8px;
+}
+.region-head:hover{background:var(--centella-soft)}
+.chev{width:8px;height:8px;border-right:2px solid var(--sage);border-bottom:2px solid var(--sage);
+  transform:rotate(45deg);transition:transform .18s;flex:0 0 auto;margin-left:1px}
+.region.collapsed .chev{transform:rotate(-45deg)}
+.region-name{font-size:13.5px;font-weight:700;letter-spacing:-.01em}
+.region-count{font-family:var(--mono);font-size:11.5px;color:var(--sage);font-weight:500}
+.region-bar{flex:1 1 auto; height:5px; border-radius:3px; background:var(--line2); overflow:hidden; margin:0 2px}
+.region-bar i{display:block;height:100%;background:linear-gradient(90deg,#6FBF95,var(--centella-deep));border-radius:3px}
+
+.shops{overflow:hidden;transition:max-height .22s ease}
+.region.collapsed .shops{max-height:0!important}
+.shop{
+  display:flex; align-items:center; gap:10px; width:100%;
+  padding:8px 10px 8px 28px; background:none;border:none;cursor:pointer;
+  font-family:inherit;text-align:left;color:var(--ink);border-radius:7px;
+}
+.shop:hover{background:#F2F6EF}
+.shop.active{background:var(--centella-soft);box-shadow:inset 2px 0 0 var(--centella)}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.shop-txt{flex:1 1 auto;min-width:0}
+.shop-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shop-sub{font-size:11px;color:var(--sage);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shop-val{font-family:var(--mono);font-size:10.5px;color:var(--sage);flex:0 0 auto}
+
+/* ---------- map ---------- */
+.map-col{flex:1 1 auto;position:relative;min-width:0}
+#map{width:100%;height:100%;background:#E9EEE6}
+.legend{
+  position:absolute; left:16px; bottom:16px; z-index:5;
+  background:rgba(255,255,255,.94); backdrop-filter:blur(4px);
+  border:1px solid var(--line); border-radius:11px; padding:11px 13px; box-shadow:var(--shadow);
+  font-size:11.5px; color:var(--sage);
+}
+.legend b{display:block;color:var(--ink);font-size:11.5px;margin-bottom:7px;font-weight:700;letter-spacing:.01em}
+.legend-row{display:flex;align-items:center;gap:7px;margin-top:5px}
+.legend-row i{border-radius:50%;background:var(--centella);flex:0 0 auto;opacity:.85}
+
+/* markers */
+.pin{transform:translate(-50%,-50%);cursor:pointer;position:relative}
+.pin .circle{border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(22,33,28,.28);transition:transform .15s}
+.pin:hover .circle,.pin.hot .circle{transform:scale(1.18)}
+.pin.hot .circle{box-shadow:0 0 0 4px rgba(47,125,91,.28),0 3px 8px rgba(22,33,28,.35)}
+
+/* info overlay */
+.info{
+  transform:translate(-50%,calc(-100% - 16px));
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  box-shadow:var(--shadow); padding:12px 14px; width:230px; position:relative;
+}
+.info::after{content:"";position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);
+  width:14px;height:14px;background:var(--panel);border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);clip-path:polygon(0 0,100% 100%,0 100%);rotate:45deg}
+.info h3{font-size:14px;font-weight:800;margin-bottom:4px;letter-spacing:-.01em}
+.info .addr{font-size:11.5px;color:var(--sage);line-height:1.45;margin-bottom:9px}
+.info .row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-top:1px solid var(--line2)}
+.info .row span{color:var(--sage)}
+.info .row b{font-family:var(--mono);font-weight:600}
+.info .close{position:absolute;top:8px;right:9px;border:none;background:none;cursor:pointer;
+  color:#B4BEB4;font-size:17px;line-height:1;padding:2px}
+.info .close:hover{color:var(--ink)}
+
+/* setup / status banner */
+.banner{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:var(--paper); z-index:10; padding:30px;
+}
+.banner .card{
+  max-width:440px; background:var(--panel); border:1px solid var(--line);
+  border-radius:16px; padding:28px 30px; box-shadow:var(--shadow);
+}
+.banner h2{font-size:17px;margin-bottom:10px}
+.banner p{font-size:13px;color:var(--sage);line-height:1.6;margin-bottom:8px}
+.banner code{font-family:var(--mono);font-size:12px;background:var(--centella-soft);
+  color:var(--centella-deep);padding:2px 6px;border-radius:5px}
+.banner a{color:var(--centella-deep);font-weight:600}
+.toast{
+  position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:8;
+  background:var(--ink); color:#fff; font-size:12px; padding:8px 15px; border-radius:20px;
+  box-shadow:var(--shadow); opacity:0; transition:opacity .25s; pointer-events:none;
+}
+.toast.show{opacity:.94}
+
+@media (max-width:820px){
+  .wrap{flex-direction:column}
+  aside{flex:0 0 46%;border-right:none;border-bottom:1px solid var(--line)}
+  .stats{gap:16px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="leaf"></div>
+    <h1>닥터배 납품처 분포</h1>
+    <span>전국 피부관리실 · 에스테틱 공급 현황</span>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="s-shops">–</b><small>납품처</small></div>
+    <div class="stat"><b id="s-regions">–</b><small>시·도</small></div>
+    <div class="stat"><b id="s-amount">–</b><small>연 주문 합계</small></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside>
+    <div class="search"><input id="q" type="text" placeholder="상호명 · 지역 검색"></div>
+    <div class="list" id="list"></div>
+  </aside>
+  <div class="map-col">
+    <div id="map"></div>
+    <div class="legend" id="legend" style="display:none">
+      <b>연 주문금액 (원 크기)</b>
+      <div class="legend-row"><i style="width:10px;height:10px"></i><span>소</span></div>
+      <div class="legend-row"><i style="width:18px;height:18px"></i><span>중</span></div>
+      <div class="legend-row"><i style="width:26px;height:26px"></i><span>대</span></div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="banner" id="banner">
+      <div class="card">
+        <h2>지도를 표시하려면 카카오 키가 필요합니다</h2>
+        <p>이 파일 상단 <code>KAKAO_KEY</code> 값에 발급받은 <b>JavaScript 키</b>를 넣어주세요.</p>
+        <p>① <a href="https://developers.kakao.com" target="_blank" rel="noopener">developers.kakao.com</a> 에서 앱 생성 → <b>JavaScript 키</b> 복사<br>
+           ② [플랫폼 → Web] 에 이 파일을 여는 도메인 등록<br>
+           &nbsp;&nbsp;&nbsp;(GitHub Pages: <code>https://아이디.github.io</code>)</p>
+        <p style="margin-top:12px;color:#9AA79E;font-size:12px">키를 넣고 새로고침하면 35개 납품처가 자동으로 지도에 표시됩니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>const SHOPS = [{"shop": "바라에스테틱", "addr": "경기도 수원시 장안구 천천로22번길 34 (정자동, 백설마을 삼환 나우빌 아파트) 511동803호", "road": "경기도 수원시 장안구 천천로22", "sido": "경기도", "sigungu": "수원시 장안구", "annual": 9454020, "total": 390000}, {"shop": "vere_aesthetic", "addr": "경기도 의정부시 시민로 80 (의정부동, 센트럴타워) 909-2호 뷔에르뷰티", "road": "경기도 의정부시 시민로 80", "sido": "경기도", "sigungu": "의정부시", "annual": 4739500, "total": 392000}, {"shop": "뷰태에스테틱", "addr": "경기도 안양시 동안구 시민대로 273 (관양동, 효성인텔리안) 320호  에스테티아 평촌", "road": "경기도 안양시 동안구 시민대로 273", "sido": "경기도", "sigungu": "안양시 동안구", "annual": 3454500, "total": 777000}, {"shop": "youn_._acneskinlab", "addr": "경기도 고양시 덕양구 지정로 17 (지축동) 618호", "road": "경기도 고양시 덕양구 지정로 17", "sido": "경기도", "sigungu": "고양시 덕양구", "annual": 1806540, "total": 18000}, {"shop": "loomee_in_beauty", "addr": "경기도 구리시 원수택로64번길 28 (수택동) 1층 루미in뷰티", "road": "경기도 구리시 원수택로64", "sido": "경기도", "sigungu": "구리시", "annual": 1497540, "total": 488250}, {"shop": "왁싱현", "addr": "경기도 화성시 동탄지성로 145 (능동) 영화프라자 401호 왁싱현", "road": "경기도 화성시 동탄지성로 145", "sido": "경기도", "sigungu": "화성시", "annual": 1258600, "total": 121200}, {"shop": "새로고은에스테틱", "addr": "경기도 용인시 처인구 명지로 24 (역북동) 219호  새로고은 에스테틱", "road": "경기도 용인시 처인구 명지로 24", "sido": "경기도", "sigungu": "용인시 처인구", "annual": 1242000, "total": 390000}, {"shop": "핀에스테틱 일산점", "addr": "경기도 고양시 일산서구 킨텍스로 240 (대화동, 킨텍스 꿈에그린) 104동 4103호", "road": "경기도 고양시 일산서구 킨텍스로 240", "sido": "경기도", "sigungu": "고양시 일산서구", "annual": 774000, "total": 390000}, {"shop": "케이뷰티엔", "addr": "경기도 수원시 영통구 센트럴파크로128번길 15-3 (이의동) 1층", "road": "경기도 수원시 영통구 센트럴파크로128", "sido": "경기도", "sigungu": "수원시 영통구", "annual": 0, "total": 55000}, {"shop": "라이크소피", "addr": "경기도 김포시 김포한강9로75번길 190 (구래동, 이너매스한강) 6층613호 라이크소피", "road": "경기도 김포시 김포한강9로75", "sido": "경기도", "sigungu": "김포시", "annual": 0, "total": 120000}, {"shop": "하이글림", "addr": "경기도 광주시 고산길 26 (고산동) 1층 하이글림", "road": "경기도 광주시 고산길 26", "sido": "경기도", "sigungu": "광주시", "annual": 0, "total": 774000}, {"shop": "고원장의 모공세척테라피 이천점", "addr": "경기도 이천시 애련정로 37 (안흥동, 일성아파트) 상가동 101호 고원장의 모공세척 테라피", "road": "경기도 이천시 애련정로 37", "sido": "경기도", "sigungu": "이천시", "annual": 0, "total": 105000}, {"shop": "쟌피오베르양산", "addr": "경상남도 양산시 번영로 25 (덕계동) 2층 201호 쟌피오베르", "road": "경상남도 양산시 번영로 25", "sido": "경상남도", "sigungu": "양산시", "annual": 5811820, "total": 790250}, {"shop": "온본에스테틱창원본점", "addr": "경상남도 창원시 마산회원구 삼호로 80 (양덕동, 메트로시티 2단지) 212동 202호 온본에스테틱 창원본점(경남은행2층)", "road": "경상남도 창원시 마산회원구 삼호로 80", "sido": "경상남도", "sigungu": "창원시 마산회원구", "annual": 0, "total": 440000}, {"shop": "missingacademy", "addr": "대구광역시 남구 안지랑로17길 17-2 (대명동) 1층 비치아이 에스테틱", "road": "대구광역시 남구 안지랑로17", "sido": "대구광역시", "sigungu": "남구", "annual": 6523740, "total": 758750}, {"shop": "디브스킨&뷰티", "addr": "대구광역시 수성구 동대구로 214 (범어동) 디브스킨&뷰티", "road": "대구광역시 수성구 동대구로 214", "sido": "대구광역시", "sigungu": "수성구 동대구", "annual": 471000, "total": 58500}, {"shop": "수스킨", "addr": "부산광역시 해운대구 해운대로 1199-18 (송정동) 펭고 (한아름 항공)", "road": "부산광역시 해운대구 해운대로 1199-18", "sido": "부산광역시", "sigungu": "해운대구", "annual": 1380250, "total": 880250}, {"shop": "헤드스파 두피어스", "addr": "부산광역시 해운대구 세실로 43 (좌동, 경동코아) 602호 두피어스", "road": "부산광역시 해운대구 세실로 43", "sido": "부산광역시", "sigungu": "해운대구", "annual": 602200, "total": 727000}, {"shop": "후림", "addr": "부산광역시 해운대구 센텀5로 55 (우동, 센텀큐) 201호 후림두피케어", "road": "부산광역시 해운대구 센텀5로 55", "sido": "부산광역시", "sigungu": "해운대구", "annual": 0, "total": 55000}, {"shop": "노바스킨", "addr": "서울특별시 마포구 동교로17안길 47 (서교동, 이룸빌딩) 3층 노바스킨", "road": "서울특별시 마포구 동교로17", "sido": "서울특별시", "sigungu": "마포구", "annual": 5808000, "total": 777000}, {"shop": "세레니티케어래", "addr": "서울특별시 마포구 백범로 178 (공덕동, 마포신영지웰) A동 1405호", "road": "서울특별시 마포구 백범로 178", "sido": "서울특별시", "sigungu": "마포구", "annual": 5036500, "total": 387000}, {"shop": "로하나코스킨", "addr": "서울특별시 강남구 학동로 342 (논현동, 에스케이 허브블루) 지하102호 로하나코스킨", "road": "서울특별시 강남구 학동로 342", "sido": "서울특별시", "sigungu": "강남구", "annual": 4776900, "total": 390000}, {"shop": "비다에스테", "addr": "서울특별시 관악구 남부순환로170길 7 (신림동, 서림빌) 1층 비다에스테", "road": "서울특별시 관악구 남부순환로170", "sido": "서울특별시", "sigungu": "관악구", "annual": 1051000, "total": 763750}, {"shop": "인더뷰티", "addr": "서울특별시 동작구 동작대로39길 22 (동작동, 이수힐스테이트) 애비뉴 1층 120호 인더뷰티", "road": "서울특별시 동작구 동작대로39", "sido": "서울특별시", "sigungu": "동작구", "annual": 0, "total": 155000}, {"shop": "오엘에스테틱", "addr": "서울특별시 송파구 송파대로 141 (문정동, 르피에드 문정) 1층 110호 오엘에스테틱", "road": "서울특별시 송파구 송파대로 141", "sido": "서울특별시", "sigungu": "송파구", "annual": 0, "total": 105000}, {"shop": "스칼프바이브", "addr": "울산광역시 중구 종가12길 24 (약사동) 202호", "road": "울산광역시 중구 종가12길 24", "sido": "울산광역시", "sigungu": "중구", "annual": 3846540, "total": 1764400}, {"shop": "무아뷰티", "addr": "울산광역시 남구 중앙로290번길 53 (신정동, 강변 센트럴하이츠) 108동 302호", "road": "울산광역시 남구 중앙로290", "sido": "울산광역시", "sigungu": "남구", "annual": 0, "total": 185000}, {"shop": "아엘", "addr": "울산광역시 울주군 청량읍 덕하1로 55 (청량읍, 울산뉴시티에일린의뜰2차아파트) 203동2301호", "road": "울산광역시 울주군 청량읍 덕하1로 55", "sido": "울산광역시", "sigungu": "울주군", "annual": 0, "total": 55000}, {"shop": "manobellaspa", "addr": "인천광역시 남동구 서창방산로 55 (서창동, 서창비젼프라자) 5층 502호", "road": "인천광역시 남동구 서창방산로 55", "sido": "인천광역시", "sigungu": "남동구", "annual": 8929200, "total": 1747500}, {"shop": "미네일", "addr": "인천광역시 남동구 용천로17번길 3 (구월동, 델루나) 미네일 1층 102호", "road": "인천광역시 남동구 용천로17", "sido": "인천광역시", "sigungu": "남동구", "annual": 1516230, "total": 129000}, {"shop": "솜이뷰티", "addr": "전라북도 익산시 약촌로 25 (금강동, 골드리버파크) 101동205호", "road": "전라북도 익산시 약촌로 25", "sido": "전북특별자치도", "sigungu": "익산시", "annual": 397000, "total": 288600}, {"shop": "바오뷰티", "addr": "전북특별자치도 전주시 덕진구 견훤로 333 (인후동1가, 위브어울림아파트) 104동 1102호", "road": "전북특별자치도 전주시 덕진구 견훤로 333", "sido": "전북특별자치도", "sigungu": "전주시 덕진구", "annual": 0, "total": 120000}, {"shop": "테라트리스킨", "addr": "충청남도 아산시 배방읍 월천5길 31 (배방읍) 1층 테라트리", "road": "충청남도 아산시 배방읍 월천5길 31", "sido": "충청남도", "sigungu": "아산시", "annual": 913900, "total": 102000}, {"shop": "마리뷰티", "addr": "충청북도 청주시 서원구 1순환로 684 (사창동) 3층", "road": "충청북도 청주시 서원구 1순환로 684", "sido": "충청북도", "sigungu": "청주시 서원구", "annual": 5433790, "total": 493250}, {"shop": "리에스테틱", "addr": "충청북도 청주시 흥덕구 서부로 1303 (가경동, 파워플러스) 네일리쥬", "road": "충청북도 청주시 흥덕구 서부로 1303", "sido": "충청북도", "sigungu": "청주시 흥덕구", "annual": 2008000, "total": 1164000}];</script>
+<script>
+const fmt = n => n>=10000 ? (n/10000).toLocaleString('ko-KR',{maximumFractionDigits:0})+'만' : n.toLocaleString('ko-KR');
+const fmtWon = n => n.toLocaleString('ko-KR')+'원';
+const VALUE = s => s.annual>0 ? s.annual : s.total;   // 규모 지표
+const maxVal = Math.max(...SHOPS.map(VALUE));
+
+// value → radius(px) & color
+function radius(v){ return 9 + 21*Math.sqrt(Math.max(v,1)/maxVal); }
+function color(v){
+  const t = Math.sqrt(Math.max(v,1)/maxVal);        // 0..1
+  const a=[169,214,190], b=[31,92,65];              // soft → deep centella
+  const c=a.map((x,i)=>Math.round(x+(b[i]-x)*t));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+// ---- header stats ----
+const regions=[...new Set(SHOPS.map(s=>s.sido))];
+document.getElementById('s-shops').textContent=SHOPS.length;
+document.getElementById('s-regions').textContent=regions.length;
+document.getElementById('s-amount').textContent=fmt(SHOPS.reduce((a,s)=>a+s.annual,0))+'원';
+
+// ---- group by region, sorted by region total desc ----
+const byRegion={};
+SHOPS.forEach((s,i)=>{ s._i=i; (byRegion[s.sido]=byRegion[s.sido]||[]).push(s); });
+const regionOrder=Object.keys(byRegion).sort((a,b)=>
+  byRegion[b].reduce((x,s)=>x+VALUE(s),0)-byRegion[a].reduce((x,s)=>x+VALUE(s),0));
+const maxRegionTotal=Math.max(...regionOrder.map(r=>byRegion[r].reduce((x,s)=>x+VALUE(s),0)));
+
+// ---- build side list ----
+const listEl=document.getElementById('list');
+const shopEls={};
+regionOrder.forEach(r=>{
+  const arr=byRegion[r], rTotal=arr.reduce((x,s)=>x+VALUE(s),0);
+  const reg=document.createElement('div'); reg.className='region';
+  const head=document.createElement('button'); head.className='region-head';
+  head.innerHTML=`<span class="chev"></span><span class="region-name">${r}</span>
+    <span class="region-count">${arr.length}</span>
+    <span class="region-bar"><i style="width:${Math.round(rTotal/maxRegionTotal*100)}%"></i></span>`;
+  head.onclick=()=>reg.classList.toggle('collapsed');
+  const shops=document.createElement('div'); shops.className='shops';
+  arr.forEach(s=>{
+    const b=document.createElement('button'); b.className='shop'; b.dataset.i=s._i;
+    b.innerHTML=`<span class="dot" style="background:${color(VALUE(s))}"></span>
+      <span class="shop-txt"><span class="shop-name">${s.shop}</span>
+      <span class="shop-sub">${s.sigungu}</span></span>
+      <span class="shop-val">${s.annual>0?fmt(s.annual):'–'}</span>`;
+    b.onclick=()=>focusShop(s._i,true);
+    shops.appendChild(b); shopEls[s._i]=b;
+  });
+  reg.appendChild(head); reg.appendChild(shops); listEl.appendChild(reg);
+  requestAnimationFrame(()=>shops.style.maxHeight=shops.scrollHeight+'px');
+});
+
+// ---- search ----
+document.getElementById('q').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.region').forEach(reg=>{
+    let any=false;
+    reg.querySelectorAll('.shop').forEach(b=>{
+      const s=SHOPS[b.dataset.i];
+      const hit=!q||(s.shop+s.sido+s.sigungu+s.addr).toLowerCase().includes(q);
+      b.style.display=hit?'':'none'; if(hit)any=true;
+    });
+    reg.style.display=any?'':'none';
+    const sh=reg.querySelector('.shops'); if(any) sh.style.maxHeight=sh.scrollHeight+'px';
+  });
+});
+
+// ================= KAKAO MAP =================
+let map, geocoder, places, overlays={}, infoOverlay=null, activeIdx=null;
+const toastEl=document.getElementById('toast');
+function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>toastEl.classList.remove('show'),2600);}
+
+function bootstrap(){
+  if(!KAKAO_KEY||KAKAO_KEY==="c17fc06160320aad6520ed199509ed36"){ return; } // banner stays
+  const sc=document.createElement('script');
+  sc.src=`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false&libraries=services`;
+  sc.onload=()=>kakao.maps.load(initMap);
+  sc.onerror=()=>document.querySelector('.banner .card').innerHTML='<h2>카카오 SDK 로드 실패</h2><p>키가 올바른지, 도메인이 등록됐는지 확인해주세요.</p>';
+  document.head.appendChild(sc);
+}
+
+function initMap(){
+  document.getElementById('banner').style.display='none';
+  document.getElementById('legend').style.display='block';
+  map=new kakao.maps.Map(document.getElementById('map'),{
+    center:new kakao.maps.LatLng(36.4,127.9), level:13
+  });
+  geocoder=new kakao.maps.services.Geocoder();
+  places=new kakao.maps.services.Places();
+  geocodeAll();
+}
+
+// sequential geocoding with fallbacks
+function geocodeAll(){
+  const bounds=new kakao.maps.LatLngBounds();
+  let done=0, failed=[];
+  (function next(k){
+    if(k>=SHOPS.length){
+      if(!bounds.isEmpty()) map.setBounds(bounds);
+      toast(`${done}곳 표시 완료${failed.length?` · 미매칭 ${failed.length}곳`:''}`);
+      if(failed.length) console.warn('미매칭 주소:',failed);
+      return;
+    }
+    const s=SHOPS[k];
+    const place=(lat,lng)=>{ addMarker(s,lat,lng); bounds.extend(new kakao.maps.LatLng(lat,lng)); done++; setTimeout(()=>next(k+1),60); };
+    const fail=()=>{ failed.push(s.shop+' / '+s.addr); setTimeout(()=>next(k+1),60); };
+    geocoder.addressSearch(s.addr,(r,st)=>{
+      if(st===kakao.maps.services.Status.OK&&r[0]) return place(+r[0].y,+r[0].x);
+      geocoder.addressSearch(s.road,(r2,st2)=>{
+        if(st2===kakao.maps.services.Status.OK&&r2[0]) return place(+r2[0].y,+r2[0].x);
+        places.keywordSearch(s.sigungu+' '+s.shop,(r3,st3)=>{
+          if(st3===kakao.maps.services.Status.OK&&r3[0]) return place(+r3[0].y,+r3[0].x);
+          fail();
+        });
+      });
+    });
+  })(0);
+}
+
+function addMarker(s,lat,lng){
+  const v=VALUE(s), d=radius(v)*2;
+  const el=document.createElement('div'); el.className='pin';
+  el.innerHTML=`<div class="circle" style="width:${d}px;height:${d}px;background:${color(v)}"></div>`;
+  el.onclick=()=>focusShop(s._i,false);
+  const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:el,yAnchor:.5,xAnchor:.5,zIndex:Math.round(v/1000)});
+  ov.setMap(map);
+  overlays[s._i]={ov,el,pos:new kakao.maps.LatLng(lat,lng)};
+}
+
+function focusShop(i,fromList){
+  const o=overlays[i]; if(!o){ toast('이 납품처는 지도에 표시되지 않았습니다'); return; }
+  if(activeIdx!=null&&overlays[activeIdx]) overlays[activeIdx].el.classList.remove('hot');
+  if(activeIdx!=null&&shopEls[activeIdx]) shopEls[activeIdx].classList.remove('active');
+  activeIdx=i; o.el.classList.add('hot'); shopEls[i].classList.add('active');
+  map.setLevel(6,{anchor:o.pos}); map.panTo(o.pos);
+  showInfo(SHOPS[i],o.pos);
+  if(fromList) return;
+  const reg=shopEls[i].closest('.region'); if(reg.classList.contains('collapsed')) reg.classList.remove('collapsed');
+  shopEls[i].scrollIntoView({block:'center',behavior:'smooth'});
+}
+
+function showInfo(s,pos){
+  if(infoOverlay) infoOverlay.setMap(null);
+  const el=document.createElement('div'); el.className='info';
+  el.innerHTML=`<button class="close">&times;</button>
+    <h3>${s.shop}</h3>
+    <div class="addr">${s.addr}</div>
+    <div class="row"><span>지역</span><b>${s.sido} ${s.sigungu}</b></div>
+    <div class="row"><span>연 주문금액</span><b>${s.annual>0?fmtWon(s.annual):'–'}</b></div>
+    <div class="row"><span>이번 주문</span><b>${fmtWon(s.total)}</b></div>`;
+  el.querySelector('.close').onclick=()=>{infoOverlay.setMap(null);infoOverlay=null;};
+  infoOverlay=new kakao.maps.CustomOverlay({position:pos,content:el,yAnchor:1,xAnchor:.5,zIndex:9999});
+  infoOverlay.setMap(map);
+}
+
+bootstrap();
+</script>
+</body>
+</html>
