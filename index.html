@@ -207,6 +207,7 @@ aside{
            ② [플랫폼 → Web] 에 이 파일을 여는 도메인 등록<br>
            &nbsp;&nbsp;&nbsp;(GitHub Pages: <code>https://아이디.github.io</code>)</p>
         <p style="margin-top:12px;color:#9AA79E;font-size:12px">키를 넣고 새로고침하면 35개 납품처가 자동으로 지도에 표시됩니다.</p>
+        <p style="margin-top:10px;font-size:11.5px;color:#9AA79E">현재 이 페이지 주소(카카오에 등록할 도메인): <code id="key-origin">–</code></p>
       </div>
     </div>
   </div>
@@ -286,13 +287,27 @@ let map, geocoder, places, overlays={}, infoOverlay=null, activeIdx=null;
 const toastEl=document.getElementById('toast');
 function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>toastEl.classList.remove('show'),2600);}
 
+function sdkError(origin){
+  document.getElementById('banner').style.display='flex';
+  document.querySelector('.banner .card').innerHTML=
+    `<h2>지도를 불러오지 못했습니다</h2>
+     <p>키는 입력됐지만 카카오가 이 사이트를 거부했습니다. 대부분 <b>도메인 미등록</b>이 원인입니다.</p>
+     <p>카카오 개발자 콘솔 → 내 앱 → <b>플랫폼 → Web → 사이트 도메인</b>에 아래 주소를 <b>그대로</b> 추가하세요:</p>
+     <p style="margin:6px 0"><code style="font-size:13px">${origin}</code></p>
+     <p style="color:#9AA79E;font-size:12px">추가 후 1~2분 뒤 새로고침하세요. <b>file://</b> 로 직접 열면 카카오가 항상 막으니 반드시 GitHub Pages(https) 주소로 여세요.</p>`;
+}
 function bootstrap(){
-  if(!KAKAO_KEY||KAKAO_KEY==="c17fc06160320aad6520ed199509ed36"){ return; } // banner stays
+  const origin=location.origin;
+  const oel=document.getElementById('key-origin'); if(oel) oel.textContent=origin;
+  if(!KAKAO_KEY||KAKAO_KEY==="c17fc06160320aad6520ed199509ed36"){ return; } // 키 미입력 → 안내 배너 유지
+  let ok=false;
   const sc=document.createElement('script');
   sc.src=`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false&libraries=services`;
-  sc.onload=()=>kakao.maps.load(initMap);
-  sc.onerror=()=>document.querySelector('.banner .card').innerHTML='<h2>카카오 SDK 로드 실패</h2><p>키가 올바른지, 도메인이 등록됐는지 확인해주세요.</p>';
+  sc.onload=()=>{ if(window.kakao&&kakao.maps){ kakao.maps.load(()=>{ ok=true; initMap(); }); } };
+  sc.onerror=()=>sdkError(origin);
   document.head.appendChild(sc);
+  // 워치독: 4.5초 안에 지도가 안 뜨면(대개 도메인 거부) 원인 안내
+  setTimeout(()=>{ if(!ok) sdkError(origin); },4500);
 }
 
 function initMap(){
