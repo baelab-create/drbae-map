@@ -39,7 +39,7 @@ body{
 /* ---------- header ---------- */
 header{
   flex:0 0 auto; display:flex; align-items:center; gap:22px;
-  padding:14px 24px; background:var(--panel); border-bottom:1px solid var(--line); z-index:20;
+  padding:13px 24px; background:var(--panel); border-bottom:1px solid var(--line); z-index:20;
 }
 .brand{display:flex; align-items:baseline; gap:10px}
 .brand .leaf{
@@ -77,6 +77,13 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
 .sec.collapsed .chev2{transform:rotate(-45deg)}
 .sec.collapsed .sec-b{display:none}
 .sec-b{padding-bottom:10px}
+
+.sumgrid{padding:2px 16px 4px}
+.sumrow{display:flex;align-items:baseline;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line2)}
+.sumrow:first-child{border-top:none}
+.sumrow span{font-size:11.5px;color:var(--mute);font-weight:600}
+.sumrow b{font-family:var(--mono);font-size:13px;font-weight:600}
+.sumrow.tot b{font-size:14.5px;color:var(--accent-deep)}
 
 .prod-head{display:flex;align-items:center;padding:2px 16px 8px}
 .prod-head .lb{font-size:10.5px;color:var(--mute);font-weight:700;letter-spacing:.03em}
@@ -254,11 +261,7 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
     <h1>닥터배 납품처 분포</h1>
     <span>전국 피부관리실 · 에스테틱 공급 현황</span>
   </div>
-  <div class="stats">
-    <div class="stat"><b id="s-shops">–</b><small>납품처</small></div>
-    <div class="stat"><b id="s-regions">–</b><small>시·도</small></div>
-    <div class="stat"><b id="s-amount">–</b><small id="lb-amount">연 주문 합계</small></div>
-  </div>
+
 </header>
 
 <div class="wrap">
@@ -266,9 +269,20 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
     <div class="daterange">
       <span class="lb">발송일</span>
       <span class="val" id="dr-from">–</span><span>~</span><span class="val" id="dr-to">–</span>
-      <span class="cnt" id="dr-cnt"></span>
     </div>
     <div class="sbwrap">
+
+      <section class="sec collapsed" id="sec-summary">
+        <button class="sec-h"><span class="chev2"></span><span class="t">현황 요약</span></button>
+        <div class="sec-b">
+          <div class="sumgrid">
+            <div class="sumrow"><span>납품처</span><b id="s-shops">–</b></div>
+            <div class="sumrow"><span>시 · 도</span><b id="s-regions">–</b></div>
+            <div class="sumrow"><span>주문 건수</span><b id="s-orders">–</b></div>
+            <div class="sumrow tot"><span id="lb-amount">연 주문 합계</span><b id="s-amount">–</b></div>
+          </div>
+        </div>
+      </section>
 
       <section class="sec" id="sec-lineup">
         <button class="sec-h"><span class="chev2"></span><span class="t">라인업</span><span class="sec-tag" id="ln-tag">전체</span></button>
@@ -290,7 +304,7 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
       </section>
 
       <section class="sec" id="sec-shops">
-        <button class="sec-h"><span class="chev2"></span><span class="t">지역별 납품처</span><span class="sec-tag" id="sh-tag"></span></button>
+        <button class="sec-h"><span class="chev2"></span><span class="t">지역별 납품처</span></button>
         <div class="sec-b">
           <div class="search"><input id="q" type="text" placeholder="상호명 · 지역 검색"></div>
           <div class="list" id="list"></div>
@@ -406,19 +420,19 @@ const fmtDist = m => m<1000 ? Math.round(m)+' m' : (m/1000).toFixed(2)+' km';
 /* ---------- date range ---------- */
 document.getElementById('dr-from').textContent=META.from;
 document.getElementById('dr-to').textContent=META.to;
-document.getElementById('dr-cnt').textContent=`주문 ${META.orders}건`;
+
 
 /* ---------- header stats ---------- */
 function updateStats(){
   const arr=SHOPS.filter(INVIEW);
-  document.getElementById('s-shops').textContent=arr.length;
-  document.getElementById('s-regions').textContent=new Set(arr.map(s=>s.sido)).size;
+  document.getElementById('s-shops').textContent=arr.length+'곳';
+  document.getElementById('s-regions').textContent=new Set(arr.map(s=>s.sido)).size+'개';
+  document.getElementById('s-orders').textContent=META.orders+'건';
   document.getElementById('s-amount').textContent=fmt(arr.reduce((a,s)=>a+VALUE(s),0))+'원';
   document.getElementById('lb-amount').textContent=valueLabel();
   document.querySelector('.legend b').textContent=valueLabel()+' (원 크기)';
   document.getElementById('ln-tag').textContent = lnAll&&lnMJ ? '전체+마젝' : (lnAll?'전체':'마젝');
   document.getElementById('pd-tag').textContent = selP.size ? `${selP.size}종 선택` : '전체';
-  document.getElementById('sh-tag').textContent = `${arr.length}곳`;
   document.getElementById('lg-blue').style.display = lnMJ ? 'flex' : 'none';
 }
 
