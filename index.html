@@ -149,13 +149,24 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
 .shop-sub{font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shop-val{font-family:var(--mono);font-size:10.5px;color:var(--mute);flex:0 0 auto}
 
+.sheet-handle{display:none;position:relative;width:100%;padding:12px 16px 10px;background:var(--panel);
+  border:none;border-radius:16px 16px 0 0;cursor:pointer;font-family:inherit;color:var(--ink);
+  align-items:center;gap:9px;flex:0 0 auto}
+.sheet-handle .grip{position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  width:38px;height:4px;border-radius:3px;background:#DFD0D0}
+.sheet-handle .hl{font-size:12.5px;font-weight:800}
+.sheet-handle .hd{font-family:var(--mono);font-size:10.5px;color:var(--mute);font-weight:600}
+.sheet-handle .hc{margin-left:auto;width:9px;height:9px;border-right:2px solid var(--mute);
+  border-bottom:2px solid var(--mute);transform:rotate(-135deg);transition:transform .25s}
+body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
+
 /* ---------- map ---------- */
 .map-col{flex:1 1 auto;position:relative;min-width:0}
 #map{width:100%;height:100%;background:#EFE8E7}
 .map-col.measure #map, .map-col.newshop #map{cursor:crosshair}
 
 /* toolbar */
-.toolbar{position:absolute;top:14px;left:14px;z-index:6;display:flex;flex-direction:column;gap:8px;width:290px}
+.toolbar{position:absolute;top:14px;left:14px;z-index:16;display:flex;flex-direction:column;gap:8px;width:290px}
 .tool-row{display:flex;gap:8px}
 .tbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
   padding:9px 10px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
@@ -247,9 +258,28 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
 .toast.show{opacity:.94}
 
 @media (max-width:820px){
-  .wrap{flex-direction:column}
-  aside{flex:0 0 44%;border-right:none;border-bottom:1px solid var(--line)}
-  .toolbar{width:calc(100% - 28px)}
+  header{padding:11px 16px}
+  .brand h1{font-size:16px}
+  .brand span{display:none}
+
+  .wrap{position:relative;flex-direction:column}
+  .map-col{position:absolute;inset:0}
+
+  aside{
+    position:absolute;left:0;right:0;bottom:0;top:auto;flex:none;
+    height:min(78vh,620px);
+    border-right:none;border-top:1px solid var(--line);border-radius:16px 16px 0 0;
+    box-shadow:0 -6px 30px rgba(31,21,24,.18);z-index:15;
+    transform:translateY(calc(100% - 50px));
+    transition:transform .28s cubic-bezier(.32,.72,0,1);
+  }
+  body.sheet-open aside{transform:translateY(0)}
+  .sheet-handle{display:flex}
+
+  .toolbar{width:calc(100% - 28px);max-width:340px}
+  .legend{bottom:64px;left:14px}
+  .toast{top:12px}
+  .daterange{padding-top:4px}
 }
 </style>
 </head>
@@ -265,7 +295,13 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
 </header>
 
 <div class="wrap">
-  <aside>
+  <aside id="aside">
+    <button class="sheet-handle" id="sheet-handle" aria-label="메뉴 열기/닫기">
+      <span class="grip"></span>
+      <span class="hl">메뉴</span>
+      <span class="hd" id="sheet-date">–</span>
+      <span class="hc"></span>
+    </button>
     <div class="daterange">
       <span class="lb">발송일</span>
       <span class="val" id="dr-from">–</span><span>~</span><span class="val" id="dr-to">–</span>
@@ -325,7 +361,7 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
         </button>
         <button class="tbtn" id="btn-new">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><path d="M12 8v5M9.5 10.5h5"/></svg>
-          신규 샵 검토
+          신규샵 위치 검토
         </button>
       </div>
 
@@ -420,6 +456,7 @@ const fmtDist = m => m<1000 ? Math.round(m)+' m' : (m/1000).toFixed(2)+' km';
 /* ---------- date range ---------- */
 document.getElementById('dr-from').textContent=META.from;
 document.getElementById('dr-to').textContent=META.to;
+document.getElementById('sheet-date').textContent=`${META.from} ~ ${META.to}`;
 
 
 /* ---------- header stats ---------- */
@@ -578,9 +615,10 @@ function refreshMarkers(){ SHOPS.forEach(styleMarker); }
 
 /* ---------- click router ---------- */
 function onShopClick(i,fromList){
-  if(mode==='measure') return pickForMeasure(i);
-  if(mode==='new' && newPos) return linkToNew(i);
+  if(mode==='measure'){ pickForMeasure(i); if(fromList) closeSheet(); return; }
+  if(mode==='new' && newPos){ linkToNew(i); if(fromList) closeSheet(); return; }
   focusShop(i,fromList);
+  if(fromList) closeSheet();
 }
 
 function focusShop(i,fromList){
@@ -792,8 +830,20 @@ document.querySelectorAll('.vbtn').forEach(b=>b.onclick=()=>{
 /* ---------- accordions ---------- */
 document.querySelectorAll('.sec-h').forEach(hd=>hd.onclick=()=>hd.parentElement.classList.toggle('collapsed'));
 
-document.getElementById('btn-measure').onclick=()=>setMode('measure');
-document.getElementById('btn-new').onclick=()=>setMode('new');
+/* ---------- mobile bottom sheet ---------- */
+const isMobile = () => window.matchMedia('(max-width:820px)').matches;
+const sheetBtn = document.getElementById('sheet-handle');
+sheetBtn.onclick = ()=> document.body.classList.toggle('sheet-open');
+function closeSheet(){ if(isMobile()) document.body.classList.remove('sheet-open'); }
+
+// 모바일 첫 진입: 지도 위주 (시트 닫힘 + 라인업/지역 섹션 접힘)
+if(isMobile()){
+  document.getElementById('sec-lineup').classList.add('collapsed');
+  document.getElementById('sec-shops').classList.add('collapsed');
+}
+
+document.getElementById('btn-measure').onclick=()=>{ closeSheet(); setMode('measure'); };
+document.getElementById('btn-new').onclick=()=>{ closeSheet(); setMode('new'); };
 document.getElementById('btn-geo').onclick=geocodeNew;
 document.getElementById('new-addr').addEventListener('keydown',e=>{ if(e.key==='Enter') geocodeNew(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&mode) setMode(mode); });
