@@ -23,6 +23,7 @@
   --line:#EBDFDF; --line2:#F4EAEA;
   --accent:#B32B33; --accent-deep:#7E1620; --accent-soft:#FBEDEC;
   --warn:#C0392B;
+  --blue:#1E5F9E; --blue-deep:#123E6B; --blue-soft:#E8F0F8;
   --shadow:0 1px 2px rgba(31,21,24,.04),0 8px 28px rgba(31,21,24,.08);
   --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
 }
@@ -53,11 +54,29 @@ header{
 .stat b{font-family:var(--mono);font-size:19px;font-weight:600;line-height:1}
 .stat small{font-size:11px;color:var(--mute);margin-top:3px}
 
+body.mj{--accent:var(--blue);--accent-deep:var(--blue-deep);--accent-soft:var(--blue-soft)}
+body.mj .brand .leaf{background:radial-gradient(circle at 35% 30%,#5D9BD6,var(--blue-deep))}
+body.mj .region-bar i{background:linear-gradient(90deg,#7FB2DC,var(--blue-deep))}
+
 /* ---------- layout ---------- */
 .wrap{flex:1 1 auto; display:flex; min-height:0}
 aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line);
   display:flex; flex-direction:column; min-height:0}
-.search{padding:14px 16px 10px; border-bottom:1px solid var(--line2)}
+.daterange{display:flex;align-items:center;gap:7px;padding:11px 16px 0;font-size:11.5px;color:var(--mute)}
+.daterange .lb{font-weight:700;color:var(--ink);font-size:11px;letter-spacing:.02em}
+.daterange .val{font-family:var(--mono);font-weight:600;color:var(--ink);font-size:11.5px}
+.daterange .cnt{margin-left:auto;font-family:var(--mono);font-size:10.5px}
+
+.viewsw{display:flex;gap:6px;padding:11px 16px 0}
+.vbtn{flex:1;padding:9px 8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+  border:1px solid var(--line);border-radius:9px;background:#FDFAFA;color:var(--mute);
+  display:flex;align-items:center;justify-content:center;gap:6px}
+.vbtn .sw{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.vbtn:hover{border-color:currentColor}
+.vbtn.on[data-v="all"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.vbtn.on[data-v="mj"]{background:var(--blue);border-color:var(--blue);color:#fff}
+
+.search{padding:11px 16px 10px; border-bottom:1px solid var(--line2)}
 .search input{width:100%; padding:10px 12px; font-size:13.5px; font-family:inherit;
   border:1px solid var(--line); border-radius:9px; background:#FDFAFA; color:var(--ink)}
 .search input:focus{outline:none;border-color:var(--accent)}
@@ -207,12 +226,21 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
   <div class="stats">
     <div class="stat"><b id="s-shops">–</b><small>납품처</small></div>
     <div class="stat"><b id="s-regions">–</b><small>시·도</small></div>
-    <div class="stat"><b id="s-amount">–</b><small>연 주문 합계</small></div>
+    <div class="stat"><b id="s-amount">–</b><small id="lb-amount">연 주문 합계</small></div>
   </div>
 </header>
 
 <div class="wrap">
   <aside>
+    <div class="daterange">
+      <span class="lb">발송일</span>
+      <span class="val" id="dr-from">–</span><span>~</span><span class="val" id="dr-to">–</span>
+      <span class="cnt" id="dr-cnt"></span>
+    </div>
+    <div class="viewsw">
+      <button class="vbtn on" data-v="all"><span class="sw" style="background:#B32B33"></span>전체 라인업</button>
+      <button class="vbtn" data-v="mj"><span class="sw" style="background:#1E5F9E"></span>마이크로젝션</button>
+    </div>
     <div class="search"><input id="q" type="text" placeholder="상호명 · 지역 검색"></div>
     <div class="list" id="list"></div>
   </aside>
@@ -271,19 +299,25 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
   </div>
 </div>
 
-<script>const SHOPS = [{"shop": "바라에스테틱", "addr": "경기도 수원시 장안구 천천로22번길 34 (정자동, 백설마을 삼환 나우빌 아파트) 511동803호", "road": "경기도 수원시 장안구 천천로22", "sido": "경기도", "sigungu": "수원시 장안구", "annual": 9454020, "total": 390000}, {"shop": "vere_aesthetic", "addr": "경기도 의정부시 시민로 80 (의정부동, 센트럴타워) 909-2호 뷔에르뷰티", "road": "경기도 의정부시 시민로 80", "sido": "경기도", "sigungu": "의정부시", "annual": 4739500, "total": 392000}, {"shop": "뷰태에스테틱", "addr": "경기도 안양시 동안구 시민대로 273 (관양동, 효성인텔리안) 320호  에스테티아 평촌", "road": "경기도 안양시 동안구 시민대로 273", "sido": "경기도", "sigungu": "안양시 동안구", "annual": 3454500, "total": 777000}, {"shop": "youn_._acneskinlab", "addr": "경기도 고양시 덕양구 지정로 17 (지축동) 618호", "road": "경기도 고양시 덕양구 지정로 17", "sido": "경기도", "sigungu": "고양시 덕양구", "annual": 1806540, "total": 18000}, {"shop": "loomee_in_beauty", "addr": "경기도 구리시 원수택로64번길 28 (수택동) 1층 루미in뷰티", "road": "경기도 구리시 원수택로64", "sido": "경기도", "sigungu": "구리시", "annual": 1497540, "total": 488250}, {"shop": "왁싱현", "addr": "경기도 화성시 동탄지성로 145 (능동) 영화프라자 401호 왁싱현", "road": "경기도 화성시 동탄지성로 145", "sido": "경기도", "sigungu": "화성시", "annual": 1258600, "total": 121200}, {"shop": "새로고은에스테틱", "addr": "경기도 용인시 처인구 명지로 24 (역북동) 219호  새로고은 에스테틱", "road": "경기도 용인시 처인구 명지로 24", "sido": "경기도", "sigungu": "용인시 처인구", "annual": 1242000, "total": 390000}, {"shop": "핀에스테틱 일산점", "addr": "경기도 고양시 일산서구 킨텍스로 240 (대화동, 킨텍스 꿈에그린) 104동 4103호", "road": "경기도 고양시 일산서구 킨텍스로 240", "sido": "경기도", "sigungu": "고양시 일산서구", "annual": 774000, "total": 390000}, {"shop": "케이뷰티엔", "addr": "경기도 수원시 영통구 센트럴파크로128번길 15-3 (이의동) 1층", "road": "경기도 수원시 영통구 센트럴파크로128", "sido": "경기도", "sigungu": "수원시 영통구", "annual": 0, "total": 55000}, {"shop": "라이크소피", "addr": "경기도 김포시 김포한강9로75번길 190 (구래동, 이너매스한강) 6층613호 라이크소피", "road": "경기도 김포시 김포한강9로75", "sido": "경기도", "sigungu": "김포시", "annual": 0, "total": 120000}, {"shop": "하이글림", "addr": "경기도 광주시 고산길 26 (고산동) 1층 하이글림", "road": "경기도 광주시 고산길 26", "sido": "경기도", "sigungu": "광주시", "annual": 0, "total": 774000}, {"shop": "고원장의 모공세척테라피 이천점", "addr": "경기도 이천시 애련정로 37 (안흥동, 일성아파트) 상가동 101호 고원장의 모공세척 테라피", "road": "경기도 이천시 애련정로 37", "sido": "경기도", "sigungu": "이천시", "annual": 0, "total": 105000}, {"shop": "쟌피오베르양산", "addr": "경상남도 양산시 번영로 25 (덕계동) 2층 201호 쟌피오베르", "road": "경상남도 양산시 번영로 25", "sido": "경상남도", "sigungu": "양산시", "annual": 5811820, "total": 790250}, {"shop": "온본에스테틱창원본점", "addr": "경상남도 창원시 마산회원구 삼호로 80 (양덕동, 메트로시티 2단지) 212동 202호 온본에스테틱 창원본점(경남은행2층)", "road": "경상남도 창원시 마산회원구 삼호로 80", "sido": "경상남도", "sigungu": "창원시 마산회원구", "annual": 0, "total": 440000}, {"shop": "missingacademy", "addr": "대구광역시 남구 안지랑로17길 17-2 (대명동) 1층 비치아이 에스테틱", "road": "대구광역시 남구 안지랑로17", "sido": "대구광역시", "sigungu": "남구", "annual": 6523740, "total": 758750}, {"shop": "디브스킨&뷰티", "addr": "대구광역시 수성구 동대구로 214 (범어동) 디브스킨&뷰티", "road": "대구광역시 수성구 동대구로 214", "sido": "대구광역시", "sigungu": "수성구 동대구", "annual": 471000, "total": 58500}, {"shop": "수스킨", "addr": "부산광역시 해운대구 해운대로 1199-18 (송정동) 펭고 (한아름 항공)", "road": "부산광역시 해운대구 해운대로 1199-18", "sido": "부산광역시", "sigungu": "해운대구", "annual": 1380250, "total": 880250}, {"shop": "헤드스파 두피어스", "addr": "부산광역시 해운대구 세실로 43 (좌동, 경동코아) 602호 두피어스", "road": "부산광역시 해운대구 세실로 43", "sido": "부산광역시", "sigungu": "해운대구", "annual": 602200, "total": 727000}, {"shop": "후림", "addr": "부산광역시 해운대구 센텀5로 55 (우동, 센텀큐) 201호 후림두피케어", "road": "부산광역시 해운대구 센텀5로 55", "sido": "부산광역시", "sigungu": "해운대구", "annual": 0, "total": 55000}, {"shop": "노바스킨", "addr": "서울특별시 마포구 동교로17안길 47 (서교동, 이룸빌딩) 3층 노바스킨", "road": "서울특별시 마포구 동교로17", "sido": "서울특별시", "sigungu": "마포구", "annual": 5808000, "total": 777000}, {"shop": "세레니티케어래", "addr": "서울특별시 마포구 백범로 178 (공덕동, 마포신영지웰) A동 1405호", "road": "서울특별시 마포구 백범로 178", "sido": "서울특별시", "sigungu": "마포구", "annual": 5036500, "total": 387000}, {"shop": "로하나코스킨", "addr": "서울특별시 강남구 학동로 342 (논현동, 에스케이 허브블루) 지하102호 로하나코스킨", "road": "서울특별시 강남구 학동로 342", "sido": "서울특별시", "sigungu": "강남구", "annual": 4776900, "total": 390000}, {"shop": "비다에스테", "addr": "서울특별시 관악구 남부순환로170길 7 (신림동, 서림빌) 1층 비다에스테", "road": "서울특별시 관악구 남부순환로170", "sido": "서울특별시", "sigungu": "관악구", "annual": 1051000, "total": 763750}, {"shop": "인더뷰티", "addr": "서울특별시 동작구 동작대로39길 22 (동작동, 이수힐스테이트) 애비뉴 1층 120호 인더뷰티", "road": "서울특별시 동작구 동작대로39", "sido": "서울특별시", "sigungu": "동작구", "annual": 0, "total": 155000}, {"shop": "오엘에스테틱", "addr": "서울특별시 송파구 송파대로 141 (문정동, 르피에드 문정) 1층 110호 오엘에스테틱", "road": "서울특별시 송파구 송파대로 141", "sido": "서울특별시", "sigungu": "송파구", "annual": 0, "total": 105000}, {"shop": "스칼프바이브", "addr": "울산광역시 중구 종가12길 24 (약사동) 202호", "road": "울산광역시 중구 종가12길 24", "sido": "울산광역시", "sigungu": "중구", "annual": 3846540, "total": 1764400}, {"shop": "무아뷰티", "addr": "울산광역시 남구 중앙로290번길 53 (신정동, 강변 센트럴하이츠) 108동 302호", "road": "울산광역시 남구 중앙로290", "sido": "울산광역시", "sigungu": "남구", "annual": 0, "total": 185000}, {"shop": "아엘", "addr": "울산광역시 울주군 청량읍 덕하1로 55 (청량읍, 울산뉴시티에일린의뜰2차아파트) 203동2301호", "road": "울산광역시 울주군 청량읍 덕하1로 55", "sido": "울산광역시", "sigungu": "울주군", "annual": 0, "total": 55000}, {"shop": "manobellaspa", "addr": "인천광역시 남동구 서창방산로 55 (서창동, 서창비젼프라자) 5층 502호", "road": "인천광역시 남동구 서창방산로 55", "sido": "인천광역시", "sigungu": "남동구", "annual": 8929200, "total": 1747500}, {"shop": "미네일", "addr": "인천광역시 남동구 용천로17번길 3 (구월동, 델루나) 미네일 1층 102호", "road": "인천광역시 남동구 용천로17", "sido": "인천광역시", "sigungu": "남동구", "annual": 1516230, "total": 129000}, {"shop": "솜이뷰티", "addr": "전라북도 익산시 약촌로 25 (금강동, 골드리버파크) 101동205호", "road": "전라북도 익산시 약촌로 25", "sido": "전북특별자치도", "sigungu": "익산시", "annual": 397000, "total": 288600}, {"shop": "바오뷰티", "addr": "전북특별자치도 전주시 덕진구 견훤로 333 (인후동1가, 위브어울림아파트) 104동 1102호", "road": "전북특별자치도 전주시 덕진구 견훤로 333", "sido": "전북특별자치도", "sigungu": "전주시 덕진구", "annual": 0, "total": 120000}, {"shop": "테라트리스킨", "addr": "충청남도 아산시 배방읍 월천5길 31 (배방읍) 1층 테라트리", "road": "충청남도 아산시 배방읍 월천5길 31", "sido": "충청남도", "sigungu": "아산시", "annual": 913900, "total": 102000}, {"shop": "마리뷰티", "addr": "충청북도 청주시 서원구 1순환로 684 (사창동) 3층", "road": "충청북도 청주시 서원구 1순환로 684", "sido": "충청북도", "sigungu": "청주시 서원구", "annual": 5433790, "total": 493250}, {"shop": "리에스테틱", "addr": "충청북도 청주시 흥덕구 서부로 1303 (가경동, 파워플러스) 네일리쥬", "road": "충청북도 청주시 흥덕구 서부로 1303", "sido": "충청북도", "sigungu": "청주시 흥덕구", "annual": 2008000, "total": 1164000}];</script>
+<script>const SHOPS = [{"shop": "바라에스테틱", "addr": "경기도 수원시 장안구 천천로22번길 34 (정자동, 백설마을 삼환 나우빌 아파트) 511동803호", "road": "경기도 수원시 장안구 천천로22", "sido": "경기도", "sigungu": "수원시 장안구", "annual": 9454020, "total": 390000, "mjTotal": 0, "mjQty": 0}, {"shop": "vere_aesthetic", "addr": "경기도 의정부시 시민로 80 (의정부동, 센트럴타워) 909-2호 뷔에르뷰티", "road": "경기도 의정부시 시민로 80", "sido": "경기도", "sigungu": "의정부시", "annual": 4739500, "total": 392000, "mjTotal": 0, "mjQty": 0}, {"shop": "뷰태에스테틱", "addr": "경기도 안양시 동안구 시민대로 273 (관양동, 효성인텔리안) 320호  에스테티아 평촌", "road": "경기도 안양시 동안구 시민대로 273", "sido": "경기도", "sigungu": "안양시 동안구", "annual": 3454500, "total": 777000, "mjTotal": 0, "mjQty": 0}, {"shop": "youn_._acneskinlab", "addr": "경기도 고양시 덕양구 지정로 17 (지축동) 618호", "road": "경기도 고양시 덕양구 지정로 17", "sido": "경기도", "sigungu": "고양시 덕양구", "annual": 1806540, "total": 18000, "mjTotal": 0, "mjQty": 0}, {"shop": "loomee_in_beauty", "addr": "경기도 구리시 원수택로64번길 28 (수택동) 1층 루미in뷰티", "road": "경기도 구리시 원수택로64", "sido": "경기도", "sigungu": "구리시", "annual": 1497540, "total": 488250, "mjTotal": 0, "mjQty": 0}, {"shop": "왁싱현", "addr": "경기도 화성시 동탄지성로 145 (능동) 영화프라자 401호 왁싱현", "road": "경기도 화성시 동탄지성로 145", "sido": "경기도", "sigungu": "화성시", "annual": 1258600, "total": 121200, "mjTotal": 0, "mjQty": 0}, {"shop": "새로고은에스테틱", "addr": "경기도 용인시 처인구 명지로 24 (역북동) 219호  새로고은 에스테틱", "road": "경기도 용인시 처인구 명지로 24", "sido": "경기도", "sigungu": "용인시 처인구", "annual": 1242000, "total": 390000, "mjTotal": 0, "mjQty": 0}, {"shop": "핀에스테틱 일산점", "addr": "경기도 고양시 일산서구 킨텍스로 240 (대화동, 킨텍스 꿈에그린) 104동 4103호", "road": "경기도 고양시 일산서구 킨텍스로 240", "sido": "경기도", "sigungu": "고양시 일산서구", "annual": 774000, "total": 390000, "mjTotal": 0, "mjQty": 0}, {"shop": "케이뷰티엔", "addr": "경기도 수원시 영통구 센트럴파크로128번길 15-3 (이의동) 1층", "road": "경기도 수원시 영통구 센트럴파크로128", "sido": "경기도", "sigungu": "수원시 영통구", "annual": 0, "total": 55000, "mjTotal": 0, "mjQty": 0}, {"shop": "라이크소피", "addr": "경기도 김포시 김포한강9로75번길 190 (구래동, 이너매스한강) 6층613호 라이크소피", "road": "경기도 김포시 김포한강9로75", "sido": "경기도", "sigungu": "김포시", "annual": 0, "total": 120000, "mjTotal": 0, "mjQty": 0}, {"shop": "하이글림", "addr": "경기도 광주시 고산길 26 (고산동) 1층 하이글림", "road": "경기도 광주시 고산길 26", "sido": "경기도", "sigungu": "광주시", "annual": 0, "total": 774000, "mjTotal": 387000, "mjQty": 4}, {"shop": "고원장의 모공세척테라피 이천점", "addr": "경기도 이천시 애련정로 37 (안흥동, 일성아파트) 상가동 101호 고원장의 모공세척 테라피", "road": "경기도 이천시 애련정로 37", "sido": "경기도", "sigungu": "이천시", "annual": 0, "total": 105000, "mjTotal": 0, "mjQty": 0}, {"shop": "쟌피오베르양산", "addr": "경상남도 양산시 번영로 25 (덕계동) 2층 201호 쟌피오베르", "road": "경상남도 양산시 번영로 25", "sido": "경상남도", "sigungu": "양산시", "annual": 5811820, "total": 790250, "mjTotal": 0, "mjQty": 0}, {"shop": "온본에스테틱창원본점", "addr": "경상남도 창원시 마산회원구 삼호로 80 (양덕동, 메트로시티 2단지) 212동 202호 온본에스테틱 창원본점(경남은행2층)", "road": "경상남도 창원시 마산회원구 삼호로 80", "sido": "경상남도", "sigungu": "창원시 마산회원구", "annual": 0, "total": 440000, "mjTotal": 0, "mjQty": 0}, {"shop": "missingacademy", "addr": "대구광역시 남구 안지랑로17길 17-2 (대명동) 1층 비치아이 에스테틱", "road": "대구광역시 남구 안지랑로17", "sido": "대구광역시", "sigungu": "남구", "annual": 6523740, "total": 758750, "mjTotal": 0, "mjQty": 0}, {"shop": "디브스킨&뷰티", "addr": "대구광역시 수성구 동대구로 214 (범어동) 디브스킨&뷰티", "road": "대구광역시 수성구 동대구로 214", "sido": "대구광역시", "sigungu": "수성구 동대구", "annual": 471000, "total": 58500, "mjTotal": 0, "mjQty": 0}, {"shop": "수스킨", "addr": "부산광역시 해운대구 해운대로 1199-18 (송정동) 펭고 (한아름 항공)", "road": "부산광역시 해운대구 해운대로 1199-18", "sido": "부산광역시", "sigungu": "해운대구", "annual": 1380250, "total": 880250, "mjTotal": 0, "mjQty": 0}, {"shop": "헤드스파 두피어스", "addr": "부산광역시 해운대구 세실로 43 (좌동, 경동코아) 602호 두피어스", "road": "부산광역시 해운대구 세실로 43", "sido": "부산광역시", "sigungu": "해운대구", "annual": 602200, "total": 727000, "mjTotal": 0, "mjQty": 0}, {"shop": "후림", "addr": "부산광역시 해운대구 센텀5로 55 (우동, 센텀큐) 201호 후림두피케어", "road": "부산광역시 해운대구 센텀5로 55", "sido": "부산광역시", "sigungu": "해운대구", "annual": 0, "total": 55000, "mjTotal": 0, "mjQty": 0}, {"shop": "노바스킨", "addr": "서울특별시 마포구 동교로17안길 47 (서교동, 이룸빌딩) 3층 노바스킨", "road": "서울특별시 마포구 동교로17", "sido": "서울특별시", "sigungu": "마포구", "annual": 5808000, "total": 777000, "mjTotal": 0, "mjQty": 0}, {"shop": "세레니티케어래", "addr": "서울특별시 마포구 백범로 178 (공덕동, 마포신영지웰) A동 1405호", "road": "서울특별시 마포구 백범로 178", "sido": "서울특별시", "sigungu": "마포구", "annual": 5036500, "total": 387000, "mjTotal": 0, "mjQty": 0}, {"shop": "로하나코스킨", "addr": "서울특별시 강남구 학동로 342 (논현동, 에스케이 허브블루) 지하102호 로하나코스킨", "road": "서울특별시 강남구 학동로 342", "sido": "서울특별시", "sigungu": "강남구", "annual": 4776900, "total": 390000, "mjTotal": 0, "mjQty": 0}, {"shop": "비다에스테", "addr": "서울특별시 관악구 남부순환로170길 7 (신림동, 서림빌) 1층 비다에스테", "road": "서울특별시 관악구 남부순환로170", "sido": "서울특별시", "sigungu": "관악구", "annual": 1051000, "total": 763750, "mjTotal": 0, "mjQty": 0}, {"shop": "인더뷰티", "addr": "서울특별시 동작구 동작대로39길 22 (동작동, 이수힐스테이트) 애비뉴 1층 120호 인더뷰티", "road": "서울특별시 동작구 동작대로39", "sido": "서울특별시", "sigungu": "동작구", "annual": 0, "total": 155000, "mjTotal": 0, "mjQty": 0}, {"shop": "오엘에스테틱", "addr": "서울특별시 송파구 송파대로 141 (문정동, 르피에드 문정) 1층 110호 오엘에스테틱", "road": "서울특별시 송파구 송파대로 141", "sido": "서울특별시", "sigungu": "송파구", "annual": 0, "total": 105000, "mjTotal": 0, "mjQty": 0}, {"shop": "스칼프바이브", "addr": "울산광역시 중구 종가12길 24 (약사동) 202호", "road": "울산광역시 중구 종가12길 24", "sido": "울산광역시", "sigungu": "중구", "annual": 3846540, "total": 1764400, "mjTotal": 0, "mjQty": 0}, {"shop": "무아뷰티", "addr": "울산광역시 남구 중앙로290번길 53 (신정동, 강변 센트럴하이츠) 108동 302호", "road": "울산광역시 남구 중앙로290", "sido": "울산광역시", "sigungu": "남구", "annual": 0, "total": 185000, "mjTotal": 0, "mjQty": 0}, {"shop": "아엘", "addr": "울산광역시 울주군 청량읍 덕하1로 55 (청량읍, 울산뉴시티에일린의뜰2차아파트) 203동2301호", "road": "울산광역시 울주군 청량읍 덕하1로 55", "sido": "울산광역시", "sigungu": "울주군", "annual": 0, "total": 55000, "mjTotal": 0, "mjQty": 0}, {"shop": "manobellaspa", "addr": "인천광역시 남동구 서창방산로 55 (서창동, 서창비젼프라자) 5층 502호", "road": "인천광역시 남동구 서창방산로 55", "sido": "인천광역시", "sigungu": "남동구", "annual": 8929200, "total": 1747500, "mjTotal": 387000, "mjQty": 4}, {"shop": "미네일", "addr": "인천광역시 남동구 용천로17번길 3 (구월동, 델루나) 미네일 1층 102호", "road": "인천광역시 남동구 용천로17", "sido": "인천광역시", "sigungu": "남동구", "annual": 1516230, "total": 129000, "mjTotal": 129000, "mjQty": 1}, {"shop": "솜이뷰티", "addr": "전라북도 익산시 약촌로 25 (금강동, 골드리버파크) 101동205호", "road": "전라북도 익산시 약촌로 25", "sido": "전북특별자치도", "sigungu": "익산시", "annual": 397000, "total": 288600, "mjTotal": 0, "mjQty": 0}, {"shop": "바오뷰티", "addr": "전북특별자치도 전주시 덕진구 견훤로 333 (인후동1가, 위브어울림아파트) 104동 1102호", "road": "전북특별자치도 전주시 덕진구 견훤로 333", "sido": "전북특별자치도", "sigungu": "전주시 덕진구", "annual": 0, "total": 120000, "mjTotal": 0, "mjQty": 0}, {"shop": "테라트리스킨", "addr": "충청남도 아산시 배방읍 월천5길 31 (배방읍) 1층 테라트리", "road": "충청남도 아산시 배방읍 월천5길 31", "sido": "충청남도", "sigungu": "아산시", "annual": 913900, "total": 102000, "mjTotal": 0, "mjQty": 0}, {"shop": "마리뷰티", "addr": "충청북도 청주시 서원구 1순환로 684 (사창동) 3층", "road": "충청북도 청주시 서원구 1순환로 684", "sido": "충청북도", "sigungu": "청주시 서원구", "annual": 5433790, "total": 493250, "mjTotal": 0, "mjQty": 0}, {"shop": "리에스테틱", "addr": "충청북도 청주시 흥덕구 서부로 1303 (가경동, 파워플러스) 네일리쥬", "road": "충청북도 청주시 흥덕구 서부로 1303", "sido": "충청북도", "sigungu": "청주시 흥덕구", "annual": 2008000, "total": 1164000, "mjTotal": 0, "mjQty": 0}];
+const META = {"from": "2026.06.02", "to": "2026.07.07", "orders": 37};</script>
 <script>
 const fmt = n => n>=10000 ? (n/10000).toLocaleString('ko-KR',{maximumFractionDigits:0})+'만' : n.toLocaleString('ko-KR');
 const fmtWon = n => n.toLocaleString('ko-KR')+'원';
-const VALUE = s => s.annual>0 ? s.annual : s.total;
-const maxVal = Math.max(...SHOPS.map(VALUE));
 const PROX_M = 1000;   // 근접 경고 반경(m)
 
+let VIEW = 'all';                                   // 'all' | 'mj'
+const VALUE = s => VIEW==='all' ? (s.annual>0 ? s.annual : s.total) : s.mjTotal;
+const INVIEW = s => VIEW==='all' ? true : s.mjTotal>0;
+let maxVal = 1;
+function recalcMax(){ const v=SHOPS.filter(INVIEW).map(VALUE); maxVal=Math.max(1,...v); }
+
 function radius(v){ return 9 + 21*Math.sqrt(Math.max(v,1)/maxVal); }
-function color(v){                                  // soft rose → deep crimson
+function color(v){
   const t=Math.sqrt(Math.max(v,1)/maxVal);
-  const a=[240,176,168], b=[126,22,32];
-  const c=a.map((x,i)=>Math.round(x+(b[i]-x)*t));
+  const pal = VIEW==='all' ? [[240,176,168],[126,22,32]]   // rose → crimson
+                           : [[168,199,228],[18,62,107]];  // sky  → navy
+  const c=pal[0].map((x,i)=>Math.round(x+(pal[1][i]-x)*t));
   return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
 // Haversine: 구면 대원거리(m). 한반도 범위 오차 < 0.5%
@@ -295,41 +329,63 @@ function haversine(lat1,lng1,lat2,lng2){
 }
 const fmtDist = m => m<1000 ? Math.round(m)+' m' : (m/1000).toFixed(2)+' km';
 
-/* ---------- header ---------- */
-const regions=[...new Set(SHOPS.map(s=>s.sido))];
-document.getElementById('s-shops').textContent=SHOPS.length;
-document.getElementById('s-regions').textContent=regions.length;
-document.getElementById('s-amount').textContent=fmt(SHOPS.reduce((a,s)=>a+s.annual,0))+'원';
+/* ---------- date range ---------- */
+document.getElementById('dr-from').textContent=META.from;
+document.getElementById('dr-to').textContent=META.to;
+document.getElementById('dr-cnt').textContent=`주문 ${META.orders}건`;
+
+/* ---------- header stats ---------- */
+function updateStats(){
+  const arr=SHOPS.filter(INVIEW);
+  const sum=arr.reduce((a,s)=>a+VALUE(s),0);
+  document.getElementById('s-shops').textContent=arr.length;
+  document.getElementById('s-regions').textContent=new Set(arr.map(s=>s.sido)).size;
+  document.getElementById('s-amount').textContent=fmt(sum)+'원';
+  document.getElementById('lb-amount').textContent = VIEW==='all' ? '연 주문 합계' : '마젝 주문 합계';
+  document.querySelector('.legend b').textContent = VIEW==='all'
+    ? '연 주문금액 (원 크기)' : '마이크로젝션 주문금액 (원 크기)';
+}
 
 /* ---------- side list ---------- */
-const byRegion={};
-SHOPS.forEach((s,i)=>{ s._i=i; (byRegion[s.sido]=byRegion[s.sido]||[]).push(s); });
-const regionOrder=Object.keys(byRegion).sort((a,b)=>
-  byRegion[b].reduce((x,s)=>x+VALUE(s),0)-byRegion[a].reduce((x,s)=>x+VALUE(s),0));
-const maxRegionTotal=Math.max(...regionOrder.map(r=>byRegion[r].reduce((x,s)=>x+VALUE(s),0)));
+SHOPS.forEach((s,i)=>{ s._i=i; });
+const listEl=document.getElementById('list');
+let shopEls={};
 
-const listEl=document.getElementById('list'), shopEls={};
-regionOrder.forEach(r=>{
-  const arr=byRegion[r], rTotal=arr.reduce((x,s)=>x+VALUE(s),0);
-  const reg=document.createElement('div'); reg.className='region';
-  const head=document.createElement('button'); head.className='region-head';
-  head.innerHTML=`<span class="chev"></span><span class="region-name">${r}</span>
-    <span class="region-count">${arr.length}</span>
-    <span class="region-bar"><i style="width:${Math.round(rTotal/maxRegionTotal*100)}%"></i></span>`;
-  head.onclick=()=>reg.classList.toggle('collapsed');
-  const shops=document.createElement('div'); shops.className='shops';
-  arr.forEach(s=>{
-    const b=document.createElement('button'); b.className='shop'; b.dataset.i=s._i;
-    b.innerHTML=`<span class="dot" style="background:${color(VALUE(s))}"></span>
-      <span class="shop-txt"><span class="shop-name">${s.shop}</span>
-      <span class="shop-sub">${s.sigungu}</span></span>
-      <span class="shop-val">${s.annual>0?fmt(s.annual):'–'}</span>`;
-    b.onclick=()=>onShopClick(s._i,true);
-    shops.appendChild(b); shopEls[s._i]=b;
+function buildList(){
+  listEl.innerHTML=''; shopEls={};
+  const arr0=SHOPS.filter(INVIEW);
+  if(!arr0.length){ listEl.innerHTML='<p style="padding:18px 12px;font-size:12.5px;color:var(--mute)">해당 라인업의 납품처가 없습니다.</p>'; return; }
+  const byRegion={};
+  arr0.forEach(s=>{ (byRegion[s.sido]=byRegion[s.sido]||[]).push(s); });
+  const order=Object.keys(byRegion).sort((a,b)=>
+    byRegion[b].reduce((x,s)=>x+VALUE(s),0)-byRegion[a].reduce((x,s)=>x+VALUE(s),0));
+  const maxR=Math.max(...order.map(r=>byRegion[r].reduce((x,s)=>x+VALUE(s),0)),1);
+
+  order.forEach(r=>{
+    const arr=byRegion[r].slice().sort((a,b)=>VALUE(b)-VALUE(a));
+    const rTotal=arr.reduce((x,s)=>x+VALUE(s),0);
+    const reg=document.createElement('div'); reg.className='region';
+    const head=document.createElement('button'); head.className='region-head';
+    head.innerHTML=`<span class="chev"></span><span class="region-name">${r}</span>
+      <span class="region-count">${arr.length}</span>
+      <span class="region-bar"><i style="width:${Math.round(rTotal/maxR*100)}%"></i></span>`;
+    head.onclick=()=>reg.classList.toggle('collapsed');
+    const shops=document.createElement('div'); shops.className='shops';
+    arr.forEach(s=>{
+      const v=VALUE(s);
+      const sub = VIEW==='all' ? s.sigungu : `${s.sigungu} · ${s.mjQty}박스`;
+      const b=document.createElement('button'); b.className='shop'; b.dataset.i=s._i;
+      b.innerHTML=`<span class="dot" style="background:${color(v)}"></span>
+        <span class="shop-txt"><span class="shop-name">${s.shop}</span>
+        <span class="shop-sub">${sub}</span></span>
+        <span class="shop-val">${v>0?fmt(v):'–'}</span>`;
+      b.onclick=()=>onShopClick(s._i,true);
+      shops.appendChild(b); shopEls[s._i]=b;
+    });
+    reg.appendChild(head); reg.appendChild(shops); listEl.appendChild(reg);
+    requestAnimationFrame(()=>shops.style.maxHeight=shops.scrollHeight+'px');
   });
-  reg.appendChild(head); reg.appendChild(shops); listEl.appendChild(reg);
-  requestAnimationFrame(()=>shops.style.maxHeight=shops.scrollHeight+'px');
-});
+}
 
 document.getElementById('q').addEventListener('input',e=>{
   const q=e.target.value.trim().toLowerCase();
@@ -391,6 +447,7 @@ function geocodeAll(){
   const bounds=new kakao.maps.LatLngBounds(); let done=0, failed=[];
   (function next(k){
     if(k>=SHOPS.length){
+      refreshMarkers();
       if(!bounds.isEmpty()) map.setBounds(bounds);
       toast(`${done}곳 표시 완료${failed.length?` · 미매칭 ${failed.length}곳`:''}`);
       if(failed.length) console.warn('미매칭 주소:',failed);
@@ -413,14 +470,22 @@ function geocodeAll(){
 }
 
 function addMarker(s,lat,lng){
-  const v=VALUE(s), d=radius(v)*2;
   const el=document.createElement('div'); el.className='pin';
-  el.innerHTML=`<div class="circle" style="width:${d}px;height:${d}px;background:${color(v)}"></div>`;
+  el.innerHTML='<div class="circle"></div>';
   el.onclick=()=>onShopClick(s._i,false);
-  const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:el,yAnchor:.5,xAnchor:.5,zIndex:Math.round(v/1000)});
-  ov.setMap(map);
+  const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:el,yAnchor:.5,xAnchor:.5});
   overlays[s._i]={ov,el,pos:new kakao.maps.LatLng(lat,lng)};
+  styleMarker(s);
 }
+function styleMarker(s){
+  const o=overlays[s._i]; if(!o) return;
+  if(!INVIEW(s)){ o.ov.setMap(null); return; }
+  const v=VALUE(s), d=radius(v)*2;
+  const c=o.el.querySelector('.circle');
+  c.style.width=d+'px'; c.style.height=d+'px'; c.style.background=color(v);
+  o.ov.setZIndex(Math.round(v/1000)); o.ov.setMap(map);
+}
+function refreshMarkers(){ SHOPS.forEach(styleMarker); }
 
 /* ---------- click router ---------- */
 function onShopClick(i,fromList){
@@ -433,10 +498,11 @@ function focusShop(i,fromList){
   const o=overlays[i]; if(!o){ toast('이 납품처는 지도에 표시되지 않았습니다'); return; }
   if(activeIdx!=null&&overlays[activeIdx]) overlays[activeIdx].el.classList.remove('hot');
   if(activeIdx!=null&&shopEls[activeIdx]) shopEls[activeIdx].classList.remove('active');
-  activeIdx=i; o.el.classList.add('hot'); shopEls[i].classList.add('active');
+  activeIdx=i; o.el.classList.add('hot');
+  if(shopEls[i]) shopEls[i].classList.add('active');
   map.setLevel(6,{anchor:o.pos}); map.panTo(o.pos);
   showInfo(SHOPS[i],o.pos);
-  if(fromList) return;
+  if(fromList||!shopEls[i]) return;
   const reg=shopEls[i].closest('.region'); reg.classList.remove('collapsed');
   shopEls[i].scrollIntoView({block:'center',behavior:'smooth'});
 }
@@ -449,7 +515,8 @@ function showInfo(s,pos){
     <div class="addr">${s.addr}</div>
     <div class="row"><span>지역</span><b>${s.sido} ${s.sigungu}</b></div>
     <div class="row"><span>연 주문금액</span><b>${s.annual>0?fmtWon(s.annual):'–'}</b></div>
-    <div class="row"><span>이번 주문</span><b>${fmtWon(s.total)}</b></div>`;
+    <div class="row"><span>이번 주문</span><b>${fmtWon(s.total)}</b></div>
+    ${s.mjTotal>0?`<div class="row"><span>마이크로젝션</span><b>${fmtWon(s.mjTotal)} · ${s.mjQty}박스</b></div>`:''}`;
   el.querySelector('.close').onclick=()=>{infoOverlay.setMap(null);infoOverlay=null;};
   infoOverlay=new kakao.maps.CustomOverlay({position:pos,content:el,yAnchor:1,xAnchor:.5,zIndex:9999});
   infoOverlay.setMap(map);
@@ -490,7 +557,7 @@ function pickForMeasure(i){
   if(measurePick.includes(i)) return;
   if(measurePick.length>=2){ clearMeasure(); }
   measurePick.push(i);
-  const o=overlays[i]; o.el.classList.add('sel'); shopEls[i].classList.add('pick');
+  const o=overlays[i]; o.el.classList.add('sel'); if(shopEls[i]) shopEls[i].classList.add('pick');
   const badge=document.createElement('div'); badge.className='badge'; badge.textContent=measurePick.length===1?'A':'B';
   o.el.appendChild(badge);
 
@@ -523,12 +590,12 @@ function placeNew(lat,lng,label){
     strokeOpacity:.8,strokeStyle:'dash',fillColor:'#B32B33',fillOpacity:.07});
   newCircle.setMap(map);
 
-  const withCoord=SHOPS.filter(s=>s.lat!=null);
+  const withCoord=SHOPS.filter(s=>s.lat!=null && INVIEW(s));
   const ranked=withCoord.map(s=>({s,m:haversine(lat,lng,s.lat,s.lng)})).sort((a,b)=>a.m-b.m);
   const inside=ranked.filter(r=>r.m<PROX_M);
 
   const verdict = inside.length
-    ? `<div class="verdict danger">⚠ 반경 1km 내 기존 납품처 <b>${inside.length}곳</b><br>신규 입점을 <b>신중히 검토</b>하세요.</div>`
+    ? `<div class="verdict danger">⚠ 반경 1km 내 기존 납품처 <b>${inside.length}곳</b> (${VIEW==='all'?'전체 라인업':'마이크로젝션'} 기준)<br>신규 입점을 <b>신중히 검토</b>하세요.</div>`
     : `<div class="verdict ok">✓ 반경 1km 내 기존 납품처 <b>없음</b><br>가장 가까운 곳까지 <b>${fmtDist(ranked[0].m)}</b></div>`;
 
   const rows = ranked.slice(0,5).map(r=>
@@ -583,12 +650,37 @@ function setMode(m){
   mapcol.classList.toggle('newshop',mode==='new');
   if(mode==='new') setTimeout(()=>document.getElementById('new-addr').focus(),50);
 }
+/* ---------- view switch ---------- */
+function applyView(v){
+  VIEW=v;
+  document.body.classList.toggle('mj', v==='mj');
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  recalcMax(); updateStats(); buildList();
+  if(map){
+    if(mode) setMode(mode);            // 측정/신규 모드 초기화
+    if(infoOverlay){infoOverlay.setMap(null);infoOverlay=null;}
+    if(activeIdx!=null&&overlays[activeIdx]) overlays[activeIdx].el.classList.remove('hot');
+    activeIdx=null;
+    refreshMarkers();
+    const arr=SHOPS.filter(s=>s.lat!=null&&INVIEW(s));
+    if(arr.length){
+      const b=new kakao.maps.LatLngBounds();
+      arr.forEach(s=>b.extend(new kakao.maps.LatLng(s.lat,s.lng)));
+      map.setBounds(b,60,60,60,60);
+    }
+    toast(v==='all'?`전체 라인업 · ${arr.length}곳`:`마이크로젝션 · ${arr.length}곳`);
+  }
+  document.getElementById('q').value='';
+}
+document.querySelectorAll('.vbtn').forEach(b=>b.onclick=()=>{ if(VIEW!==b.dataset.v) applyView(b.dataset.v); });
+
 document.getElementById('btn-measure').onclick=()=>setMode('measure');
 document.getElementById('btn-new').onclick=()=>setMode('new');
 document.getElementById('btn-geo').onclick=geocodeNew;
 document.getElementById('new-addr').addEventListener('keydown',e=>{ if(e.key==='Enter') geocodeNew(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&mode) setMode(mode); });
 
+recalcMax(); updateStats(); buildList();
 bootstrap();
 </script>
 </body>
