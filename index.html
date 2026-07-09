@@ -299,7 +299,7 @@ function sdkError(origin){
 function bootstrap(){
   const origin=location.origin;
   const oel=document.getElementById('key-origin'); if(oel) oel.textContent=origin;
-  if(!KAKAO_KEY||KAKAO_KEY==="c17fc06160320aad6520ed199509ed36"){ return; } // 키 미입력 → 안내 배너 유지
+  if(!KAKAO_KEY||KAKAO_KEY.length<30||KAKAO_KEY.indexOf("YOUR_")===0){ return; } // 키 미입력 → 안내 배너 유지
   let ok=false;
   const sc=document.createElement('script');
   sc.src=`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false&libraries=services`;
