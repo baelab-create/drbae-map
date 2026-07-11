@@ -108,14 +108,12 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
 .daterange .val{font-family:var(--mono);font-weight:600;color:var(--ink);font-size:11.5px}
 .daterange .cnt{margin-left:auto;font-family:var(--mono);font-size:10.5px}
 
-.viewsw{display:flex;gap:6px;padding:2px 16px 4px}
-.vbtn{flex:1;padding:9px 8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
-  border:1px solid var(--line);border-radius:9px;background:#FDFAFA;color:var(--mute);
-  display:flex;align-items:center;justify-content:center;gap:6px}
-.vbtn .sw{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
-.vbtn:hover{border-color:currentColor}
-.vbtn.on[data-v="all"]{background:var(--accent);border-color:var(--accent);color:#fff}
-.vbtn.on[data-v="mj"]{background:var(--blue);border-color:var(--blue);color:#fff}
+
+
+
+
+
+
 
 .search{padding:2px 16px 8px}
 .search input{width:100%; padding:10px 12px; font-size:13.5px; font-family:inherit;
@@ -320,16 +318,7 @@ body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
         </div>
       </section>
 
-      <section class="sec" id="sec-lineup">
-        <button class="sec-h"><span class="chev2"></span><span class="t">라인업</span><span class="sec-tag" id="ln-tag">전체</span></button>
-        <div class="sec-b">
-          <div class="viewsw">
-            <button class="vbtn on" data-v="all"><span class="sw" style="background:#B32B33"></span>전체 라인업</button>
-            <button class="vbtn" data-v="mj"><span class="sw" style="background:#1E5F9E"></span>마이크로젝션</button>
-          </div>
-          <p style="padding:2px 16px 0;font-size:10.5px;color:var(--mute);line-height:1.5">두 버튼을 모두 켜면 함께 표시됩니다 (마젝 구매처는 파란색).</p>
-        </div>
-      </section>
+      
 
       <section class="sec collapsed" id="sec-prod">
         <button class="sec-h"><span class="chev2"></span><span class="t">제품별 현황</span><span class="sec-tag" id="pd-tag">전체</span></button>
@@ -420,20 +409,15 @@ const fmtWon = n => n.toLocaleString('ko-KR')+'원';
 const PROX_M = 1000;   // 근접 경고 반경(m)
 
 let sizeMode = 'value';                            // 'value' | 'uniform'
-let lnAll = true, lnMJ = false;                     // 라인업 다중 선택
 let selP = new Set();                              // 선택된 제품 코드 (빈 집합 = 전체)
 
-const isMJ   = s => s.mjTotal>0;
-const lineOK = s => lnAll ? true : (lnMJ ? isMJ(s) : false);
-const prodOK = s => selP.size===0 || [...selP].some(c => s.p[c]);
-const INVIEW = s => lineOK(s) && prodOK(s);
+const INVIEW = s => selP.size===0 || [...selP].some(c => s.p[c]);
 
 function VALUE(s){
   if(selP.size) return [...selP].reduce((a,c)=> a + (s.p[c]?s.p[c][1]:0), 0);
-  if(lnMJ && !lnAll) return s.mjTotal;
   return s.annual>0 ? s.annual : s.total;
 }
-const blueShop = s => lnMJ && isMJ(s);             // 파란색으로 칠할 대상
+const blueShop = s => selP.has('MJ') && s.mjTotal>0;   // 마젝 선택 시 파란색
 
 let maxVal = 1;
 function recalcMax(){ maxVal = Math.max(1, ...SHOPS.filter(INVIEW).map(VALUE)); }
@@ -446,7 +430,6 @@ function color(v,blue){ return mix(blue?BLUE:RED, Math.sqrt(Math.max(v,1)/maxVal
 function valueLabel(){
   if(selP.size===1) return PRODUCTS.find(p=>p.c===[...selP][0]).n;
   if(selP.size>1)   return `선택 ${selP.size}종 합계`;
-  if(lnMJ && !lnAll) return '마젝 주문 합계';
   return '연 주문 합계';
 }
 // Haversine: 구면 대원거리(m). 한반도 범위 오차 < 0.5%
@@ -473,9 +456,8 @@ function updateStats(){
   document.getElementById('s-amount').textContent=fmt(arr.reduce((a,s)=>a+VALUE(s),0))+'원';
   document.getElementById('lb-amount').textContent=valueLabel();
   document.querySelector('.legend b').textContent=valueLabel()+' (원 크기)';
-  document.getElementById('ln-tag').textContent = lnAll&&lnMJ ? '전체+마젝' : (lnAll?'전체':'마젝');
   document.getElementById('pd-tag').textContent = selP.size ? `${selP.size}종 선택` : '전체';
-  document.getElementById('lg-blue').style.display = lnMJ ? 'flex' : 'none';
+  document.getElementById('lg-blue').style.display = selP.has('MJ') ? 'flex' : 'none';
 }
 
 /* ---------- side list ---------- */
@@ -811,10 +793,7 @@ document.getElementById('pd-clear').onclick=()=>{ if(selP.size){ selP.clear(); a
 
 /* ---------- filters ---------- */
 function applyFilters(fit){
-  if(!lnAll && !lnMJ) lnAll=true;                      // 최소 1개 유지
-  document.body.classList.toggle('mj', lnMJ && !lnAll);
-  document.querySelector('.vbtn[data-v="all"]').classList.toggle('on',lnAll);
-  document.querySelector('.vbtn[data-v="mj"]').classList.toggle('on',lnMJ);
+  document.body.classList.toggle('mj', selP.size===1 && selP.has('MJ'));
   recalcMax(); updateStats(); buildProducts(); buildList();
   document.getElementById('q').value='';
   if(!map) return;
@@ -831,10 +810,6 @@ function applyFilters(fit){
   }
   toast(arr.length?`${arr.length}곳 표시`:'조건에 맞는 납품처가 없습니다');
 }
-document.querySelectorAll('.vbtn').forEach(b=>b.onclick=()=>{
-  if(b.dataset.v==='all') lnAll=!lnAll; else lnMJ=!lnMJ;
-  applyFilters();
-});
 
 /* ---------- accordions ---------- */
 document.querySelectorAll('.sec-h').forEach(hd=>hd.onclick=()=>hd.parentElement.classList.toggle('collapsed'));
@@ -847,7 +822,6 @@ function closeSheet(){ if(isMobile()) document.body.classList.remove('sheet-open
 
 // 모바일 첫 진입: 지도 위주 (시트 닫힘 + 라인업/지역 섹션 접힘)
 if(isMobile()){
-  document.getElementById('sec-lineup').classList.add('collapsed');
   document.getElementById('sec-shops').classList.add('collapsed');
 }
 
