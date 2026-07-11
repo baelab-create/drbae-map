@@ -85,6 +85,25 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
 .sumrow b{font-family:var(--mono);font-size:13px;font-weight:600}
 .sumrow.tot b{font-size:14.5px;color:var(--accent-deep)}
 
+.dormsw{display:flex;gap:6px;padding:0 16px 4px}
+.dbtn{flex:1;padding:9px 8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+  border:1px solid var(--line);border-radius:9px;background:#FDFAFA;color:var(--mute)}
+.dbtn b{font-family:var(--mono);font-weight:600;margin-left:3px}
+.dbtn:hover{border-color:#D97706;color:#B45309}
+.dbtn.on{background:#D97706;border-color:#D97706;color:#fff}
+
+.dorm-sort{padding:8px 16px 3px;font-size:10.5px;color:var(--mute);font-weight:700;letter-spacing:.03em}
+.ditem{display:flex;align-items:center;gap:9px;width:100%;padding:7px 16px;background:none;border:none;
+  cursor:pointer;font-family:inherit;text-align:left;color:var(--ink)}
+.ditem:hover{background:#FDF6EC}
+.ditem .dd{width:8px;height:8px;border-radius:50%;background:#D97706;flex:0 0 auto;opacity:.85}
+.ditem .dtx{flex:1 1 auto;min-width:0}
+.ditem .dn{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.ditem .dr{font-size:10.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.ditem .dl{flex:0 0 auto;text-align:right}
+.ditem .dl b{display:block;font-family:var(--mono);font-size:11px;font-weight:600;color:#B45309}
+.ditem .dl small{display:block;font-family:var(--mono);font-size:9.5px;color:var(--mute)}
+
 .prod-head{display:flex;align-items:center;padding:2px 16px 8px}
 .prod-head .lb{font-size:10.5px;color:var(--mute);font-weight:700;letter-spacing:.03em}
 .prod-head button{margin-left:auto;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;
@@ -328,6 +347,18 @@ body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
         </div>
       </section>
 
+      <section class="sec collapsed" id="sec-dorm">
+        <button class="sec-h"><span class="chev2"></span><span class="t">주문 공백 샵</span><span class="sec-tag" id="dm-tag">OFF</span></button>
+        <div class="sec-b">
+          <p class="hint" style="padding:0 16px 8px">기준일: <b id="dorm-ref">–</b> (데이터 최신 발송일)<br>해당 기간 주문이 없는 샵만 표시합니다.</p>
+          <div class="dormsw">
+            <button class="dbtn" data-m="3">3개월 무주문 <b id="dorm-c3">–</b></button>
+            <button class="dbtn" data-m="6">6개월 무주문 <b id="dorm-c6">–</b></button>
+          </div>
+          <div id="dormlist"></div>
+        </div>
+      </section>
+
       <section class="sec" id="sec-shops">
         <button class="sec-h"><span class="chev2"></span><span class="t">지역별 납품처</span></button>
         <div class="sec-b">
@@ -411,7 +442,18 @@ const PROX_M = 1000;   // 근접 경고 반경(m)
 let sizeMode = 'value';                            // 'value' | 'uniform'
 let selP = new Set();                              // 선택된 제품 코드 (빈 집합 = 전체)
 
-const INVIEW = s => selP.size===0 || [...selP].some(c => s.p[c]);
+let dormSel = 0;                                   // 0=OFF | 3 | 6 (개월)
+function monthsBefore(ymd, m){                     // 'YYYY.MM.DD' 기준 m개월 전
+  const [y,mo,d]=ymd.split('.').map(Number);
+  const dt=new Date(y,mo-1-m,d);
+  return `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')}`;
+}
+const DORM_CUT = {3: monthsBefore(META.to,3), 6: monthsBefore(META.to,6)};
+const isDorm = (s,m) => s.last && s.last < DORM_CUT[m];
+
+const prodOK = s => selP.size===0 || [...selP].some(c => s.p[c]);
+const dormOK = s => !dormSel || isDorm(s,dormSel);
+const INVIEW = s => prodOK(s) && dormOK(s);
 
 function VALUE(s){
   if(selP.size) return [...selP].reduce((a,c)=> a + (s.p[c]?s.p[c][1]:0), 0);
@@ -457,6 +499,7 @@ function updateStats(){
   document.getElementById('lb-amount').textContent=valueLabel();
   document.querySelector('.legend b').textContent=valueLabel()+' (원 크기)';
   document.getElementById('pd-tag').textContent = selP.size ? `${selP.size}종 선택` : '전체';
+  document.getElementById('dm-tag').textContent = dormSel ? `${dormSel}개월` : 'OFF';
   document.getElementById('lg-blue').style.display = selP.has('MJ') ? 'flex' : 'none';
 }
 
@@ -487,7 +530,8 @@ function buildList(){
     const shops=document.createElement('div'); shops.className='shops';
     arr.forEach(s=>{
       const v=VALUE(s);
-      const sub = blueShop(s) && !selP.size ? `${s.sigungu} · 마젝 ${s.mjQty}박스` : s.sigungu;
+      const sub = dormSel ? `${s.sigungu} · 마지막 ${s.last}`
+                : (blueShop(s) && !selP.size ? `${s.sigungu} · 마젝 ${s.mjQty}박스` : s.sigungu);
       const b=document.createElement('button'); b.className='shop'; b.dataset.i=s._i;
       b.innerHTML=`<span class="dot" style="background:${color(v,blueShop(s))}"></span>
         <span class="shop-txt"><span class="shop-name">${s.shop}</span>
@@ -794,7 +838,7 @@ document.getElementById('pd-clear').onclick=()=>{ if(selP.size){ selP.clear(); a
 /* ---------- filters ---------- */
 function applyFilters(fit){
   document.body.classList.toggle('mj', selP.size===1 && selP.has('MJ'));
-  recalcMax(); updateStats(); buildProducts(); buildList();
+  recalcMax(); updateStats(); buildProducts(); buildList(); buildDormList();
   document.getElementById('q').value='';
   if(!map) return;
   if(mode) setMode(mode);
@@ -810,6 +854,38 @@ function applyFilters(fit){
   }
   toast(arr.length?`${arr.length}곳 표시`:'조건에 맞는 납품처가 없습니다');
 }
+
+/* ---------- dormant filter ---------- */
+document.getElementById('dorm-ref').textContent = META.to;
+document.getElementById('dorm-c3').textContent = SHOPS.filter(s=>isDorm(s,3)).length+'곳';
+document.getElementById('dorm-c6').textContent = SHOPS.filter(s=>isDorm(s,6)).length+'곳';
+function gapDays(last){
+  const [y,m,d]=last.split('.').map(Number), [Y,M,D]=META.to.split('.').map(Number);
+  return Math.round((new Date(Y,M-1,D)-new Date(y,m-1,d))/86400000);
+}
+function buildDormList(){
+  const box=document.getElementById('dormlist'); box.innerHTML='';
+  if(!dormSel) return;
+  const arr=SHOPS.filter(s=>isDorm(s,dormSel) && prodOK(s))
+                 .sort((a,b)=> a.last<b.last?-1 : a.last>b.last?1 : VALUE(b)-VALUE(a));
+  if(!arr.length){ box.innerHTML='<p class="hint" style="padding:6px 16px">해당 샵이 없습니다.</p>'; return; }
+  const t=document.createElement('div'); t.className='dorm-sort';
+  t.textContent=`공백 오래된 순 · ${arr.length}곳`; box.appendChild(t);
+  arr.forEach(s=>{
+    const b=document.createElement('button'); b.className='ditem';
+    b.innerHTML=`<span class="dd"></span>
+      <span class="dtx"><span class="dn">${s.shop}</span><span class="dr">${s.sido} ${s.sigungu}</span></span>
+      <span class="dl"><b>${s.last}</b><small>${gapDays(s.last)}일 경과</small></span>`;
+    b.onclick=()=>onShopClick(s._i,true);
+    box.appendChild(b);
+  });
+}
+document.querySelectorAll('.dbtn').forEach(b=>b.onclick=()=>{
+  const m=+b.dataset.m;
+  dormSel = (dormSel===m) ? 0 : m;
+  document.querySelectorAll('.dbtn').forEach(x=>x.classList.toggle('on', +x.dataset.m===dormSel));
+  applyFilters();
+});
 
 /* ---------- accordions ---------- */
 document.querySelectorAll('.sec-h').forEach(hd=>hd.onclick=()=>hd.parentElement.classList.toggle('collapsed'));
