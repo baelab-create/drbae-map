@@ -370,6 +370,7 @@ body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
 .reco-row:first-child{border-top:none}
 .reco-n{font-family:var(--mono);font-size:11px;color:var(--mute);flex:0 0 auto}
 body.pg-newshop{--accent:#2F9E44;--accent-deep:#217A33;--accent-soft:#E5F5E9}
+body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
 .nspage{flex-direction:column}
 .ns-bar{flex:0 0 auto;display:flex;gap:8px;padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--line)}
 .ns-bar input{flex:1;max-width:520px;padding:10px 13px;font-family:inherit;font-size:13.5px;
@@ -387,8 +388,10 @@ body.pg-newshop{--accent:#2F9E44;--accent-deep:#217A33;--accent-soft:#E5F5E9}
   background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:10px;padding:8px 13px;
   font-size:11px;color:var(--mute)}
 .ns-maplegend span{display:flex;align-items:center;gap:5px}
-.ns-maplegend i{width:11px;height:11px;border-radius:50%;border:2px dashed;background:none}
-.ns-maplegend .r1{border-color:#74B816}.ns-maplegend .r2{border-color:#E8863B}.ns-maplegend .r3{border-color:#9AA4B5}
+.ns-maplegend i{width:11px;height:11px;border-radius:50%;border:2px dashed}
+.ns-maplegend .r1{border-color:#74B816;background:rgba(116,184,22,.18)}
+.ns-maplegend .r2{border-color:#E8863B;background:rgba(232,134,59,.14)}
+.ns-maplegend .r3{border-color:#9AA4B5;background:rgba(154,164,181,.12)}
 .ns-side{flex:1 1 45%;overflow-y:auto;padding:20px 24px 40px;background:var(--paper);min-width:0}
 .ns-side::-webkit-scrollbar{width:9px}
 .ns-side::-webkit-scrollbar-thumb{background:#D5DAE5;border-radius:9px}
@@ -416,7 +419,7 @@ body.pg-newshop{--accent:#2F9E44;--accent-deep:#217A33;--accent-soft:#E5F5E9}
   #rpmain,#rpmain *,#nsreport,#nsreport *{visibility:visible}
   #rpmain,#nsreport{position:absolute;left:0;top:0;width:100%;overflow:visible;padding:8mm;background:#fff}
   #nsreport{display:block}
-  #nsreport .ns-map-wrap{height:90mm;margin-bottom:6mm}
+  #nsreport .ns-map-wrap{height:340px;margin-bottom:6mm}
   .rp-actions,.ns-bar{display:none!important}
 }
 
@@ -1763,10 +1766,10 @@ function nsPlace(lat,lng,label){
   pe.innerHTML='<div class="body"><span>NEW</span></div>';
   const pin=new kakao.maps.CustomOverlay({position:nsPos,content:pe,yAnchor:1,xAnchor:.5,zIndex:10001});
   pin.setMap(nmap); nsObjs.push(pin);
-  // 반경 원 1/2/3km
-  [[1000,'#74B816'],[2000,'#E8863B'],[3000,'#9AA4B5']].forEach(([rad,col])=>{
+  // 반경 원 1/2/3km — 반투명 면 (3km→1km 순서로 그려 중심부가 진하게 겹침)
+  [[3000,'#9AA4B5',.07],[2000,'#E8863B',.09],[1000,'#74B816',.13]].forEach(([rad,col,fo])=>{
     const c=new kakao.maps.Circle({center:nsPos,radius:rad,strokeWeight:rad===2000?3:2,
-      strokeColor:col,strokeOpacity:.9,strokeStyle:'dash',fillColor:col,fillOpacity:rad===2000?.06:.03});
+      strokeColor:col,strokeOpacity:.9,strokeStyle:'dash',fillColor:col,fillOpacity:fo});
     c.setMap(nmap); nsObjs.push(c);
   });
   // 인근 샵 (좌표 보유분)
@@ -1812,7 +1815,19 @@ function nsPlace(lat,lng,label){
 }
 document.getElementById('ns-go').onclick=nsAnalyze;
 document.getElementById('ns-addr').addEventListener('keydown',e=>{ if(e.key==='Enter') nsAnalyze(); });
-document.getElementById('ns-print').onclick=()=>window.print();
+document.getElementById('ns-print').onclick=()=>{
+  if(nmap && nsPos){
+    document.body.classList.add('nsprint');            // 지도를 인쇄 높이로 미리 전환
+    nmap.relayout(); nmap.setCenter(nsPos);            // 타일 재배치 + 원 중심 고정
+    setTimeout(()=>{
+      nmap.setCenter(nsPos);                           // 타일 로드 후 재고정
+      window.print();
+      setTimeout(()=>{ document.body.classList.remove('nsprint'); nmap.relayout(); nmap.setCenter(nsPos); },400);
+    },450);
+  } else window.print();
+};
+window.addEventListener('beforeprint',()=>{ if(nmap&&nsPos&&curPage==='newshop'){ nmap.relayout(); nmap.setCenter(nsPos); } });
+window.addEventListener('afterprint', ()=>{ if(nmap&&nsPos){ nmap.relayout(); nmap.setCenter(nsPos); } });
 
 /* ---------- accordions ---------- */
 document.querySelectorAll('.sec-h').forEach(hd=>hd.onclick=()=>hd.parentElement.classList.toggle('collapsed'));
