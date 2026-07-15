@@ -369,11 +369,55 @@ body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
 .reco-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line2)}
 .reco-row:first-child{border-top:none}
 .reco-n{font-family:var(--mono);font-size:11px;color:var(--mute);flex:0 0 auto}
+body.pg-newshop{--accent:#2F9E44;--accent-deep:#217A33;--accent-soft:#E5F5E9}
+.nspage{flex-direction:column}
+.ns-bar{flex:0 0 auto;display:flex;gap:8px;padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--line)}
+.ns-bar input{flex:1;max-width:520px;padding:10px 13px;font-family:inherit;font-size:13.5px;
+  border:1px solid var(--line);border-radius:10px;background:#FDFAFA;color:var(--ink)}
+.ns-bar input:focus{outline:none;border-color:var(--accent)}
+.ns-bar button{padding:10px 16px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+  background:var(--accent);color:#fff;border:none;border-radius:10px}
+.ns-bar button:hover{background:var(--accent-deep)}
+.ns-bar #ns-print{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.ns-bar #ns-print:hover{border-color:var(--accent);color:var(--accent-deep);background:var(--panel)}
+.ns-body{flex:1 1 auto;display:flex;min-height:0}
+.ns-map-wrap{flex:1 1 55%;position:relative;min-width:0}
+#nmap{width:100%;height:100%;background:#EFF1F0}
+.ns-maplegend{position:absolute;left:14px;bottom:14px;z-index:5;display:flex;gap:14px;
+  background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:10px;padding:8px 13px;
+  font-size:11px;color:var(--mute)}
+.ns-maplegend span{display:flex;align-items:center;gap:5px}
+.ns-maplegend i{width:11px;height:11px;border-radius:50%;border:2px dashed;background:none}
+.ns-maplegend .r1{border-color:#74B816}.ns-maplegend .r2{border-color:#E8863B}.ns-maplegend .r3{border-color:#9AA4B5}
+.ns-side{flex:1 1 45%;overflow-y:auto;padding:20px 24px 40px;background:var(--paper);min-width:0}
+.ns-side::-webkit-scrollbar{width:9px}
+.ns-side::-webkit-scrollbar-thumb{background:#D5DAE5;border-radius:9px}
+.nletter{transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:#1B2333;
+  color:#fff;font-family:var(--mono);font-size:12.5px;font-weight:700;display:flex;align-items:center;
+  justify-content:center;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(27,35,51,.35)}
+.ns-h{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+.ns-meta{font-size:11.5px;color:var(--mute);margin-bottom:14px;line-height:1.6}
+.ns-verdict{border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.6}
+.ns-verdict.ok{background:#E5F5E9;border:1px solid #BFE6C8;color:#17501F}
+.ns-verdict.no{background:#FCE4EC;border:1px solid #F3BFD2;color:#7A1B3E}
+.ns-verdict b{font-size:14.5px}
+.ns-seminar{background:var(--panel);border:1px solid var(--line);border-left:4px solid #2F9E44;
+  border-radius:0 12px 12px 0;padding:12px 15px;font-size:12.5px;line-height:1.7;margin-bottom:16px}
+.ns-foot{font-size:10.5px;color:var(--mute);margin-top:14px;line-height:1.6}
+@media (max-width:820px){
+  .ns-body{flex-direction:column}
+  .ns-map-wrap{flex:0 0 45vh}
+  .ns-bar{flex-wrap:wrap}
+  .ns-bar input{min-width:0;max-width:none;flex:1 1 100%}
+}
+
 @media print{
   body *{visibility:hidden}
-  #rpmain,#rpmain *{visibility:visible}
-  #rpmain{position:absolute;left:0;top:0;width:100%;overflow:visible;padding:8mm;background:#fff}
-  .rp-actions{display:none!important}
+  #rpmain,#rpmain *,#nsreport,#nsreport *{visibility:visible}
+  #rpmain,#nsreport{position:absolute;left:0;top:0;width:100%;overflow:visible;padding:8mm;background:#fff}
+  #nsreport{display:block}
+  #nsreport .ns-map-wrap{height:90mm;margin-bottom:6mm}
+  .rp-actions,.ns-bar{display:none!important}
 }
 
 @media (max-width:820px){
@@ -523,6 +567,7 @@ body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
     <button class="tab on" data-pg="map">지도</button>
     <button class="tab" data-pg="rank">순위 분석</button>
     <button class="tab" data-pg="report">샵 리포트</button>
+    <button class="tab" data-pg="newshop">신규샵 위치 리포트</button>
   </nav>
   <div class="hdr-actions">
     <span class="hdr-file" id="hdr-file"></span>
@@ -695,6 +740,25 @@ body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
   </div>
   <div class="rp-main" id="rpmain">
     <div class="rp-empty">위에서 샵을 선택하거나, <b>순위 분석</b> 탭에서 샵을 클릭하면 납품 분석 리포트가 표시됩니다.</div>
+  </div>
+</div>
+
+<div class="page-el nspage" id="page-newshop">
+  <div class="ns-bar">
+    <input id="ns-addr" type="text" placeholder="신규 입점 희망 주소를 입력하세요 (도로명 주소)">
+    <button id="ns-go">위치 검토</button>
+    <button id="ns-print" style="display:none">🖨 인쇄 / PDF 저장</button>
+  </div>
+  <div class="ns-body" id="nsreport">
+    <div class="ns-map-wrap">
+      <div id="nmap"></div>
+      <div class="ns-maplegend">
+        <span><i class="r1"></i>1km</span><span><i class="r2"></i>2km <b>(마이크로젝션 기준)</b></span><span><i class="r3"></i>3km</span>
+      </div>
+    </div>
+    <div class="ns-side" id="ns-results">
+      <div class="rp-note">상단에 주소를 입력하고 <b>위치 검토</b>를 누르면<br>반경 1·2·3km 분석과 마이크로젝션 입점 판정이 표시됩니다.</div>
+    </div>
   </div>
 </div>
 
@@ -1413,12 +1477,14 @@ let curPage='map', rankSort='annual', recentDesc=true, reportIdx=null;
 
 function switchPage(pg){
   curPage=pg;
-  document.body.classList.remove('pg-rank','pg-report');
+  document.body.classList.remove('pg-rank','pg-report','pg-newshop');
   if(pg==='rank') document.body.classList.add('pg-rank');
   else if(pg==='report') document.body.classList.add('pg-report');
+  else if(pg==='newshop') document.body.classList.add('pg-newshop');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.pg===pg));
   document.querySelectorAll('.page-el').forEach(el=>el.classList.toggle('on',el.id==='page-'+pg));
   if(pg==='map'&&map) setTimeout(()=>map.relayout(),60);
+  if(pg==='newshop') setTimeout(()=>{ ensureNMap(); if(nmap){ nmap.relayout(); if(nsPos) nmap.setCenter(nsPos); } },60);
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchPage(t.dataset.pg));
 
@@ -1657,6 +1723,97 @@ function selectReport(i){
   main.scrollTop=0;
 }
 
+/* ---------- 신규샵 위치 리포트 ---------- */
+const MJ_RADIUS=2000;
+let nmap=null, nsPos=null, nsObjs=[];
+function ensureNMap(){
+  if(nmap || !window.kakao || !kakao.maps || !mapReady) return;
+  nmap=new kakao.maps.Map(document.getElementById('nmap'),{center:new kakao.maps.LatLng(36.4,127.9),level:13});
+}
+function nsClear(){
+  nsObjs.forEach(o=>o.setMap(null)); nsObjs=[]; nsPos=null;
+  document.getElementById('ns-print').style.display='none';
+}
+function nsReset(){
+  nsClear();
+  document.getElementById('ns-addr').value='';
+  document.getElementById('ns-results').innerHTML='<div class="rp-note">상단에 주소를 입력하고 <b>위치 검토</b>를 누르면<br>반경 1·2·3km 분석과 마이크로젝션 입점 판정이 표시됩니다.</div>';
+}
+function nsAnalyze(){
+  const q=document.getElementById('ns-addr').value.trim();
+  if(!q){ toast('주소를 입력하세요'); return; }
+  if(!geocoder){ 
+    document.getElementById('ns-results').innerHTML='<div class="rp-note">📍 지도 서비스가 아직 준비되지 않았습니다.<br>배포 주소(GitHub Pages)에서 열면 작동합니다.</div>';
+    return;
+  }
+  geocoder.addressSearch(q,(r,st)=>{
+    if(st===kakao.maps.services.Status.OK&&r[0]) return nsPlace(+r[0].y,+r[0].x,q);
+    places.keywordSearch(q,(r2,st2)=>{
+      if(st2===kakao.maps.services.Status.OK&&r2[0]) return nsPlace(+r2[0].y,+r2[0].x,r2[0].place_name);
+      toast('주소를 찾지 못했습니다. 도로명 주소로 다시 시도하세요');
+    });
+  });
+}
+function nsPlace(lat,lng,label){
+  ensureNMap(); if(!nmap){ toast('지도 준비 중'); return; }
+  nsClear();
+  nsPos=new kakao.maps.LatLng(lat,lng);
+  // NEW 핀
+  const pe=document.createElement('div'); pe.className='newpin';
+  pe.innerHTML='<div class="body"><span>NEW</span></div>';
+  const pin=new kakao.maps.CustomOverlay({position:nsPos,content:pe,yAnchor:1,xAnchor:.5,zIndex:10001});
+  pin.setMap(nmap); nsObjs.push(pin);
+  // 반경 원 1/2/3km
+  [[1000,'#74B816'],[2000,'#E8863B'],[3000,'#9AA4B5']].forEach(([rad,col])=>{
+    const c=new kakao.maps.Circle({center:nsPos,radius:rad,strokeWeight:rad===2000?3:2,
+      strokeColor:col,strokeOpacity:.9,strokeStyle:'dash',fillColor:col,fillOpacity:rad===2000?.06:.03});
+    c.setMap(nmap); nsObjs.push(c);
+  });
+  // 인근 샵 (좌표 보유분)
+  const withLL=SHOPS.map(s=>{const ll=getLL(s); return ll?{s,ll,m:haversine(lat,lng,ll[0],ll[1])}:null;}).filter(Boolean);
+  const noLL=SHOPS.length - withLL.length;
+  const near5=withLL.slice().sort((a,b)=>a.m-b.m).slice(0,5);
+  near5.forEach((x,k)=>{
+    const le=document.createElement('div'); le.className='nletter'; le.textContent=String.fromCharCode(65+k);
+    const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(x.ll[0],x.ll[1]),content:le,yAnchor:.5,xAnchor:.5,zIndex:9000});
+    ov.setMap(nmap); nsObjs.push(ov);
+  });
+  // 3km 원이 다 보이게
+  const b=new kakao.maps.LatLngBounds();
+  const dLat=3000/111320, dLng=3000/(111320*Math.cos(lat*Math.PI/180));
+  b.extend(new kakao.maps.LatLng(lat-dLat,lng-dLng)); b.extend(new kakao.maps.LatLng(lat+dLat,lng+dLng));
+  nmap.setBounds(b,30,30,30,30);
+  // ── 마이크로젝션 2km 판정 ──
+  const mjNear=withLL.filter(x=>x.s.mjTotal>0).sort((a,b)=>a.m-b.m);
+  const mjIn=mjNear.filter(x=>x.m<MJ_RADIUS);
+  const ok=mjIn.length===0;
+  const verdict = ok
+    ? `<div class="ns-verdict ok">✅ <b>마이크로젝션 입점 가능</b><br>반경 2km 내 마이크로젝션 운영 파트너가 없습니다.${mjNear.length?` (최근접 마이크로젝션 파트너: ${fmtDist(mjNear[0].m)})`:''}</div>
+       <div class="ns-seminar"><b>📋 입점 절차 안내</b><br>마이크로젝션 입점을 원하실 경우, <b>배교수님 오프라인 세미나</b> 참석 후 입점이 가능합니다.<br>세미나 구성: <b>의료법 · 의료광고법 · 공중위생관리법 · 화장품법</b> 이론 강의</div>`
+    : `<div class="ns-verdict no">⛔ <b>마이크로젝션 입점 불가</b><br>반경 2km 내 마이크로젝션 운영 파트너 <b>${mjIn.length}곳</b>이 있습니다 (최근접 ${fmtDist(mjIn[0].m)}).</div>`;
+  // ── 인근 5곳 (익명) ──
+  const rows=near5.map((x,k)=>{
+    const ls=linesOf(x.s);
+    return `<div class="nb-row">
+      <span class="nb-name">${String.fromCharCode(65+k)}샵</span>
+      <span class="nb-dist ${x.m<1000?'close':''}">${fmtDist(x.m)}</span>
+      <span class="nb-prods">${ls.length?ls.sort((a,b2)=>x.s.p[b2][1]-x.s.p[a][1]).map(chip2).join(''):'<span class="hint">주요 제품 라인 없음</span>'}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('ns-results').innerHTML=`
+    <div class="ns-h">Dr.BAE 신규 입점 위치 리포트</div>
+    <div class="ns-meta">검토 위치: ${label}<br>작성일 ${todayStr()} · 배랩(BAE Lab) · 직선거리 기준</div>
+    ${verdict}
+    <div class="rp-sec">인근 Dr.BAE 파트너 현황 <span style="font-weight:500;color:var(--mute);font-size:11px">개인정보 보호를 위해 익명(A~E샵) 표기 · 거리순</span></div>
+    <div class="rp-prods">${rows||'<p class="hint" style="padding:8px 0">주변에 표시할 파트너가 없습니다.</p>'}</div>
+    <div class="ns-foot">※ 파트너 샵의 상호·주소·매출 정보는 표시되지 않습니다. · 거리는 직선거리 기준입니다.${noLL?` · 위치 미확인 파트너 ${noLL}곳은 분석에서 제외되었습니다.`:''}</div>`;
+  document.getElementById('ns-print').style.display='inline-block';
+  toast('위치 검토 완료');
+}
+document.getElementById('ns-go').onclick=nsAnalyze;
+document.getElementById('ns-addr').addEventListener('keydown',e=>{ if(e.key==='Enter') nsAnalyze(); });
+document.getElementById('ns-print').onclick=()=>window.print();
+
 /* ---------- accordions ---------- */
 document.querySelectorAll('.sec-h').forEach(hd=>hd.onclick=()=>hd.parentElement.classList.toggle('collapsed'));
 
@@ -1719,6 +1876,7 @@ function setData(shops, products, meta, label, diag){
     q.style.display='block';
   } else q.style.display='none';
   reportIdx=null;
+  if(typeof nsReset==='function') nsReset();
   document.getElementById('rpmain').innerHTML='<div class="rp-empty">위에서 샵을 선택하거나, <b>순위 분석</b> 탭에서 샵을 클릭하면 납품 분석 리포트가 표시됩니다.</div>';
   recalcMax(); updateStats(); buildProducts(); buildList(); buildDormList(); buildRank(); buildReportList();
   document.getElementById('q').value='';
