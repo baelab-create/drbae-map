@@ -249,6 +249,9 @@ body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
   border:1px solid var(--line);border-radius:9px;background:#FDFAFA;color:var(--mute)}
 .rksort:hover{border-color:var(--accent);color:var(--accent-deep)}
 .rksort.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.rk-search{margin-left:auto;padding:8px 12px;font-family:inherit;font-size:12px;min-width:170px;
+  border:1px solid var(--line);border-radius:9px;background:#FDFAFA;color:var(--ink)}
+.rk-search:focus{outline:none;border-color:var(--accent)}
 .rkdir{font-family:var(--mono);font-weight:800;margin-left:2px;opacity:.85}
 .rksort .rkdir{display:none}
 .rksort.on[data-s="recent"] .rkdir{display:inline}
@@ -314,6 +317,10 @@ body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
 /* ---- report page ---- */
 .reportpage{flex-direction:column}
 .rp-bar{flex:0 0 auto;padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--line)}
+.rp-bar{display:flex;gap:8px;flex-wrap:wrap}
+.rp-bar #rp-q{padding:10px 12px;font-family:inherit;font-size:12.5px;min-width:180px;
+  border:1px solid var(--line);border-radius:10px;background:#FDFAFA;color:var(--ink)}
+.rp-bar #rp-q:focus{outline:none;border-color:var(--accent)}
 .rp-bar select{min-width:320px;max-width:100%;padding:10px 12px;font-family:inherit;font-size:13.5px;font-weight:600;
   color:var(--ink);border:1px solid var(--line);border-radius:10px;background:#FDFAFA;cursor:pointer}
 .rp-bar select:focus{outline:none;border-color:var(--accent)}
@@ -520,6 +527,11 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
 .info .row b{font-family:var(--mono);font-weight:600}
 .info .close{position:absolute;top:8px;right:9px;border:none;background:none;cursor:pointer;color:#C6B4B4;font-size:17px;padding:2px}
 .info .close:hover{color:var(--ink)}
+.info-actions{display:flex;gap:6px;margin-top:10px;padding-top:9px;border-top:1px solid var(--line2)}
+.ia{flex:1;padding:7px 4px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;
+  background:var(--accent-soft);color:var(--accent-deep);border:1px solid transparent;border-radius:8px}
+.ia:hover{border-color:var(--accent)}
+.rkrow.flash{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 2px var(--accent)}
 
 /* banner + toast */
 .banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--paper);z-index:10;padding:30px}
@@ -731,6 +743,7 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
       <button class="rksort on" data-s="annual">1년 주문금액순</button>
       <button class="rksort" data-s="total">기간 누적순</button>
       <button class="rksort" data-s="recent" title="다시 누르면 최근↔오래된 순서 전환">최근 주문순 <span class="rkdir" id="rkdir">↓</span></button>
+      <input id="rk-q" class="rk-search" type="text" placeholder="🔍 샵 검색">
     </div>
     <div class="rk-cards" id="rk-cards"></div>
   </div>
@@ -739,6 +752,7 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
 
 <div class="page-el reportpage" id="page-report">
   <div class="rp-bar">
+    <input id="rp-q" type="text" placeholder="🔍 샵 검색">
     <select id="rp-select"><option value="">샵을 선택하세요</option></select>
   </div>
   <div class="rp-main" id="rpmain">
@@ -1267,8 +1281,14 @@ function showInfo(s,pos){
     <div class="addr">${s.addr}</div>
     <div class="row"><span>지역</span><b>${s.sido} ${s.sigungu}</b></div>
     <div class="row"><span>1년 주문 금액</span><b>${s.annual>0?fmtWon(s.annual):'–'}</b></div>
-    <div class="row"><span>가장 최근 주문일</span><b>${s.last||'–'}</b></div>`;
+    <div class="row"><span>가장 최근 주문일</span><b>${s.last||'–'}</b></div>
+    <div class="info-actions">
+      <button class="ia" data-a="rank">📊 순위에서 보기</button>
+      <button class="ia" data-a="rep">📋 샵 리포트</button>
+    </div>`;
   el.querySelector('.close').onclick=()=>{infoOverlay.setMap(null);infoOverlay=null;};
+  el.querySelector('[data-a="rank"]').onclick=()=>gotoRank(s._i);
+  el.querySelector('[data-a="rep"]').onclick=()=>{ switchPage('report'); selectReport(s._i); };
   infoOverlay=new kakao.maps.CustomOverlay({position:pos,content:el,yAnchor:1,xAnchor:.5,zIndex:9999});
   infoOverlay.setMap(map);
 }
@@ -1490,6 +1510,15 @@ function switchPage(pg){
   if(pg==='newshop') setTimeout(()=>{ ensureNMap(); if(nmap){ nmap.relayout(); if(nsPos) nmap.setCenter(nsPos); } },60);
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchPage(t.dataset.pg));
+function gotoRank(i){
+  switchPage('rank');
+  document.getElementById('rk-q').value=''; buildRank();
+  setTimeout(()=>{
+    const el=document.querySelector(`.rkrow[data-i="${i}"]`);
+    if(el){ el.scrollIntoView({block:'center',behavior:'smooth'});
+      el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),1800); }
+  },100);
+}
 
 /* ---- 순위 분석 ---- */
 function recencyBand(ymd){ if(!ymd) return 2;
@@ -1505,7 +1534,9 @@ function buildRank(){
   const box=document.getElementById('ranklist');
   const cards=document.getElementById('rk-cards');
   if(!SHOPS.length){ box.innerHTML='<p class="hint" style="padding:20px">데이터를 업로드하면 표시됩니다.</p>'; cards.innerHTML=''; return; }
-  const arr=SHOPS.slice();
+  const rq=(document.getElementById('rk-q').value||'').trim().toLowerCase();
+  const arr=SHOPS.filter(s=>!rq||(s.shop+s.sido+s.sigungu).toLowerCase().includes(rq));
+  if(!arr.length){ box.innerHTML='<p class="hint" style="padding:20px">검색 결과가 없습니다.</p>'; cards.innerHTML=''; return; }
   if(rankSort==='annual')      arr.sort((a,b)=>b.annual-a.annual);
   else if(rankSort==='total')  arr.sort((a,b)=>b.total-a.total);
   else {                       // recent (방향 토글)
@@ -1546,7 +1577,7 @@ function buildRank(){
       }
     }
     rank++;
-    const b=document.createElement('button'); b.className='rkrow'+(rank<=3&&!byDate?' top3':'')+(byDate?' dated':'');
+    const b=document.createElement('button'); b.className='rkrow'+(rank<=3&&!byDate?' top3':'')+(byDate?' dated':''); b.dataset.i=s._i;
     const money = s[moneyKey];
     const bd=BAND[recencyBand(s.last)];
     const pill=`<span class="rkpill b-${bd[1]}">${bd[0]}</span>`;
@@ -1570,6 +1601,7 @@ function buildRank(){
   });
 }
 
+document.getElementById('rk-q').addEventListener('input',buildRank);
 document.querySelectorAll('.rksort').forEach(b=>b.onclick=()=>{
   const s=b.dataset.s;
   if(s==='recent' && rankSort==='recent') recentDesc=!recentDesc;   // 재클릭 → 방향 전환
@@ -1584,10 +1616,14 @@ document.querySelectorAll('.rksort').forEach(b=>b.onclick=()=>{
 function buildReportList(){
   const sel=document.getElementById('rp-select');
   if(!SHOPS.length){ sel.innerHTML='<option value="">데이터를 업로드하세요</option>'; return; }
-  const arr=SHOPS.slice().sort((a,b)=>b.annual-a.annual||b.total-a.total);
-  sel.innerHTML='<option value="">샵을 선택하세요</option>'+arr.map(s=>
-    `<option value="${s._i}"${s._i===reportIdx?' selected':''}>${s.shop} — ${s.sigungu||s.sido}${s.annual>0?' · '+fmt(s.annual)+'원':''}</option>`).join('');
+  const q=(document.getElementById('rp-q').value||'').trim().toLowerCase();
+  const arr=SHOPS.filter(s=>!q||(s.shop+s.sido+s.sigungu).toLowerCase().includes(q))
+                 .sort((a,b)=>b.annual-a.annual||b.total-a.total);
+  sel.innerHTML=(arr.length?'<option value="">샵을 선택하세요'+(q?` (검색 ${arr.length}곳)`:'')+'</option>':'<option value="">검색 결과 없음</option>')
+    + arr.map(s=>`<option value="${s._i}"${s._i===reportIdx?' selected':''}>${s.shop} — ${s.sigungu||s.sido}${s.annual>0?' · '+fmt(s.annual)+'원':''}</option>`).join('');
+  if(q && arr.length===1) selectReport(arr[0]._i);   // 검색 결과 1곳이면 바로 열기
 }
+document.getElementById('rp-q').addEventListener('input',buildReportList);
 document.getElementById('rp-select').addEventListener('change',e=>{
   const v=e.target.value; if(v!=='') selectReport(+v);
 });
@@ -1895,6 +1931,8 @@ function setData(shops, products, meta, label, diag){
   document.getElementById('rpmain').innerHTML='<div class="rp-empty">위에서 샵을 선택하거나, <b>순위 분석</b> 탭에서 샵을 클릭하면 납품 분석 리포트가 표시됩니다.</div>';
   recalcMax(); updateStats(); buildProducts(); buildList(); buildDormList(); buildRank(); buildReportList();
   document.getElementById('q').value='';
+  document.getElementById('rk-q').value='';
+  document.getElementById('rp-q').value='';
   document.getElementById('upov').style.display='none';
 
   try{ localStorage.setItem('drbae_data_v3', JSON.stringify({shops,products,meta,label,diag})); }catch(e){}
