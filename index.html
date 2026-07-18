@@ -791,7 +791,7 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
 <div class="page-el rankpage" id="page-rank">
   <div class="rk-top">
     <div class="rk-sorts">
-      <button class="rksort on" data-s="annual">1년 주문금액순</button>
+      <button class="rksort on" data-s="annual">최근 1년 주문액순</button>
       <button class="rksort" data-s="total">기간 누적순</button>
       <button class="rksort" data-s="recent" title="다시 누르면 최근↔오래된 순서 전환">최근 주문순 <span class="rkdir" id="rkdir">↓</span></button>
       <input id="rk-q" class="rk-search" type="text" placeholder="🔍 샵 검색">
@@ -1098,12 +1098,19 @@ function buildShops(rows){
     r.mjTotal=r.p.MJ?r.p.MJ[1]:0; r.mjQty=r.p.MJ?r.p.MJ[0]:0;
     r.total=Math.round(r.total);
   });
-  const raw=s=>s.annual>0?s.annual:s.total;
+  const raw=s=>s.total;
   shops.sort((a,b)=> a.sido<b.sido?-1:a.sido>b.sido?1:raw(b)-raw(a));
 
   const dates=data.map(r=>toYMD(r['발송일'])).filter(Boolean).sort();
   const meta={from:dates[0]||'–', to:dates[dates.length-1]||'–',
               orders:new Set(data.map(r=>r['주문번호'])).size};
+  // 최근 1년(최근 12개월 버킷) 주문액 — 월별 이력에서 직접 계산
+  if(meta.to!=='–'){
+    let [cy,cm]=meta.to.slice(0,7).split('.').map(Number);
+    cm-=11; while(cm<1){cm+=12;cy--;}
+    const cutYM=cy+'.'+String(cm).padStart(2,'0');
+    shops.forEach(s=>{ let v=0; for(const mo in s.hist) if(mo>=cutYM) v+=s.hist[mo]; s.y1=Math.round(v); });
+  } else shops.forEach(s=>s.y1=0);
   const products=CATALOG.map(([c,n,g])=>{
     const ss=shops.filter(s=>s.p[c]);
     return ss.length?{c,n,g,shops:ss.length,
@@ -1161,7 +1168,7 @@ const INVIEW = s => prodOK(s) && dormOK(s);
 
 function VALUE(s){
   if(selP.size) return [...selP].reduce((a,c)=> a + (s.p[c]?s.p[c][1]:0), 0);
-  return s.annual>0 ? s.annual : s.total;
+  return (s.y1||0)>0 ? s.y1 : s.total;
 }
 const blueShop = s => selP.has('MJ') && s.mjTotal>0;   // 마젝 선택 시 파란색
 
@@ -1187,7 +1194,7 @@ function color(v,blue){ return mix(blue?BLUE:RED, Math.sqrt(Math.max(v,1)/maxVal
 function valueLabel(){
   if(selP.size===1) return PRODUCTS.find(p=>p.c===[...selP][0]).n;
   if(selP.size>1)   return `선택 ${selP.size}종 합계`;
-  return '연 주문 합계';
+  return '최근 1년 합계';
 }
 // Haversine: 구면 대원거리(m). 한반도 범위 오차 < 0.5%
 function haversine(lat1,lng1,lat2,lng2){
@@ -1398,7 +1405,8 @@ function showInfo(s,pos){
     <h3>${s.shop}</h3>
     <div class="addr">${s.addr}</div>
     <div class="row"><span>지역</span><b>${s.sido} ${s.sigungu}</b></div>
-    <div class="row"><span>1년 주문 금액</span><b>${s.annual>0?fmtWon(s.annual):'–'}</b></div>
+    <div class="row"><span>누적 주문액 (${META.from.slice(2,7)}~)</span><b>${fmtWon(s.total)}</b></div>
+    <div class="row"><span>최근 1년 주문액</span><b>${(s.y1||0)>0?fmtWon(s.y1):'–'}</b></div>
     <div class="row"><span>가장 최근 주문일</span><b>${s.last||'–'}</b></div>
     <div class="info-actions">
       <button class="ia" data-a="rank">📊 순위에서 보기</button>
@@ -1660,13 +1668,13 @@ function buildRank(){
   const rq=(document.getElementById('rk-q').value||'').trim().toLowerCase();
   const arr=SHOPS.filter(s=>!rq||(s.shop+s.sido+s.sigungu).toLowerCase().includes(rq));
   if(!arr.length){ box.innerHTML='<p class="hint" style="padding:20px">검색 결과가 없습니다.</p>'; cards.innerHTML=''; return; }
-  if(rankSort==='annual')      arr.sort((a,b)=>b.annual-a.annual);
+  if(rankSort==='annual')      arr.sort((a,b)=>(b.y1||0)-(a.y1||0)||b.total-a.total);
   else if(rankSort==='total')  arr.sort((a,b)=>b.total-a.total);
   else {                       // recent (방향 토글)
     arr.sort((a,b)=> a.last>b.last?-1:a.last<b.last?1:b.total-a.total);
     if(!recentDesc) arr.reverse();
   }
-  const moneyKey = rankSort==='annual' ? 'annual' : 'total';
+  const moneyKey = rankSort==='annual' ? 'y1' : 'total';
   const byDate = (rankSort==='recent');
   const maxM=Math.max(1,...arr.map(s=>s[moneyKey]));
   const maxTotal=Math.max(1,...arr.map(s=>s.total));
@@ -1741,9 +1749,9 @@ function buildReportList(){
   if(!SHOPS.length){ sel.innerHTML='<option value="">데이터를 업로드하세요</option>'; return; }
   const q=(document.getElementById('rp-q').value||'').trim().toLowerCase();
   const arr=SHOPS.filter(s=>!q||(s.shop+s.sido+s.sigungu).toLowerCase().includes(q))
-                 .sort((a,b)=>b.annual-a.annual||b.total-a.total);
+                 .sort((a,b)=>(b.y1||0)-(a.y1||0)||b.total-a.total);
   sel.innerHTML=(arr.length?'<option value="">샵을 선택하세요'+(q?` (검색 ${arr.length}곳)`:'')+'</option>':'<option value="">검색 결과 없음</option>')
-    + arr.map(s=>`<option value="${s._i}"${s._i===reportIdx?' selected':''}>${s.shop} — ${s.sigungu||s.sido}${s.annual>0?' · '+fmt(s.annual)+'원':''}</option>`).join('');
+    + arr.map(s=>`<option value="${s._i}"${s._i===reportIdx?' selected':''}>${s.shop} — ${s.sigungu||s.sido}${(s.y1||0)>0?' · '+fmt(s.y1)+'원':''}</option>`).join('');
   if(q && arr.length===1) selectReport(arr[0]._i);   // 검색 결과 1곳이면 바로 열기
 }
 document.getElementById('rp-q').addEventListener('input',buildReportList);
@@ -1863,7 +1871,8 @@ function selectReport(i){
     <div class="rp-metrics">
       <div class="rpm"><small>누적 주문</small><b>${s.n}건</b><span class="sub">평균 ${fmtWon(avg)}</span></div>
       <div class="rpm"><small>사용 제품 라인</small><b>${myLines.length}종</b></div>
-      <div class="rpm"><small>1년 주문 금액</small><b>${s.annual>0?fmtWon(s.annual):'–'}</b></div>
+      <div class="rpm"><small>전체 누적 주문액</small><b>${fmtWon(s.total)}</b><span class="sub">${META.from} ~ ${META.to}</span></div>
+      <div class="rpm"><small>최근 1년 주문액</small><b>${(s.y1||0)>0?fmtWon(s.y1):'–'}</b><span class="sub">최근 12개월</span></div>
       <div class="rpm"><small>가장 최근 주문</small><b>${s.last}</b><span class="sub">${gapDays(s.last)}일 경과</span></div>
     </div>
     <div class="rp-sec">① 월별 제품군별 주문 현황 <span style="font-weight:500;color:var(--mute);font-size:11px">색상 = 제품 라인</span></div>
@@ -2122,7 +2131,7 @@ function setData(shops, products, meta, label, diag, days){
   document.getElementById('rp-q').value='';
   document.getElementById('upov').style.display='none';
 
-  try{ localStorage.setItem('drbae_data_v3', JSON.stringify({shops,products,meta,label,diag,days})); }catch(e){}
+  try{ localStorage.setItem('drbae_data_v4', JSON.stringify({shops,products,meta,label,diag,days})); }catch(e){}
   if(mapReady) geocodeAll();
 }
 
@@ -2160,13 +2169,13 @@ upov.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) handleF
 document.addEventListener('dragover',e=>{ e.preventDefault(); if(upov.style.display==='none') upov.style.display='flex'; });
 document.addEventListener('drop',e=>{ e.preventDefault(); });
 document.getElementById('up-clear').onclick=()=>{
-  try{ localStorage.removeItem('drbae_data_v3'); localStorage.removeItem('drbae_geo_v1'); GEO={}; }catch(e){}
+  try{ localStorage.removeItem('drbae_data_v4'); localStorage.removeItem('drbae_geo_v1'); GEO={}; }catch(e){}
   toast('저장된 데이터와 좌표 캐시를 삭제했습니다');
 };
 
 // 초기 화면 + 저장 데이터 자동 복원
 recalcMax(); updateStats(); buildProducts(); buildList();
-let __saved=null; try{ __saved=JSON.parse(localStorage.getItem('drbae_data_v3')||'null'); }catch(e){}
+let __saved=null; try{ __saved=JSON.parse(localStorage.getItem('drbae_data_v4')||'null'); }catch(e){}
 if(__saved&&__saved.shops&&__saved.shops.length){
   setData(__saved.shops,__saved.products,__saved.meta,(__saved.label||'저장된 데이터'),__saved.diag,__saved.days);
   toast('마지막 업로드 데이터를 복원했습니다');
