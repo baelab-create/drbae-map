@@ -979,6 +979,24 @@ function canonName(n){
   return NAME_ALIASES[n.toLowerCase()] || n;
 }
 
+/* ── 병합용 정규화 (스펙 2026-07-19) ── */
+const normAddr=a=>String(a??'').replace(/\s+/g,'');
+const normName=n=>canonName(n).toLowerCase().replace(/[\s._\-]/g,'');
+const PLACEHOLDER=/^(창업준비중|준비중|창업예정|오픈예정|미정|없음|해당없음|개인|x+|\?+)$/;
+const validMergeName=n=>!!n && !PLACEHOLDER.test(n) && n!=='미상';
+const normPhone=p=>{ const d=String(p??'').replace(/\D/g,''); return d.length>=9?d:''; };  // 마스킹 전화 자동 무효
+/* tier 1 = 상호명 계열(법상 유일) / tier 2 = 인스타 계열(지점 간 공유 가능 → 후순위)
+   ※ 스펙 §5-2 보강: 다수결을 계열별 2단으로 — 프랜차이즈 공유 인스타 핸들이
+     서로 다른 지점을 잇거나(오병합) 지점명 다수결을 이기는 것(과소병합)을 방지 */
+const SHOP_PATS_T1=[/샵\s*상호명\s*[:：]+\s*([^/]+)/, /샵\s*이름[^:：/]*[:：]+\s*([^/]+)/];
+const SHOP_PATS_T2=[/샵\s*인스타(?:\s*아이디)?\s*[:：]+\s*([^/]+)/, /인스타\s*아이디[^:：/]*[:：]+\s*([^/]+)/];
+function parseShopName(o){
+  if(typeof o!=='string') return {name:'',tier:0};
+  for(const re of SHOP_PATS_T1){ const m=o.match(re); if(m) return {name:m[1].replace(/^[\s:：]+/,'').trim(), tier:1}; }
+  for(const re of SHOP_PATS_T2){ const m=o.match(re); if(m) return {name:m[1].replace(/^[\s:：]+/,'').trim(), tier:2}; }
+  return {name:'',tier:0};
+}
+
 function cleanShop(opts, recv){
   const pats=[/샵\s*상호명\s*[:：]+\s*([^/]+)/, /샵\s*이름\s*[:：]+\s*([^/]+)/,
               /샵\s*인스타(?:\s*아이디)?\s*[:：]+\s*([^/]+)/,
@@ -1022,6 +1040,11 @@ function buildShops(rows){
 
   const diagC={opt:0,name:0,base:0,baseAmt:0};
   const dayMap={};
+  /* union-find (문자열 노드: A:주소 / N:대표상호 / P:전화) */
+  const UF={};
+  const find=x=>{ while(UF[x]!==undefined && UF[x]!==x) x=UF[x]=UF[UF[x]]??UF[x]; if(UF[x]===undefined) UF[x]=x; return x; };
+  const union=(a,b)=>{ a=find(a); b=find(b); if(a!==b) UF[b]=a; };
+  const nameFreq={};   // normAddr → {normName: count}
   const _allD=data.map(r=>toYMD(r['발송일'])).filter(Boolean).sort();
   const _latest=_allD.length?_allD[_allD.length-1]:'';
   const groups={};
@@ -1032,11 +1055,21 @@ function buildShops(rows){
     const g=groups[k], addr=g[0]['통합배송지'];
     let r=recs[addr];
     if(!r) r=recs[addr]={shop:bestName[addr],addr,road:roadOf(addr),sido:sidoNorm(addr),
-                         sigungu:sigunguOf(addr),annual:0,total:0,last:'',first:'',n:0,hist:{},ph:{},p:{},buyers:{}};
+                         sigungu:sigunguOf(addr),annual:0,total:0,last:'',first:'',n:0,hist:{},ph:{},p:{}};
     r.annual=Math.max(r.annual, ...g.map(x=>numOf(x['1년 주문금액'])));
     r.n+=1;
-    g.forEach(x=>{ const b=String(x['주문자번호']??'').trim();
-      if(b&&b!=='null'&&b!=='undefined') r.buyers[b]=1; });
+    const _ak='A:'+normAddr(addr);
+    g.forEach(x=>{
+      const ph=normPhone(x['수취인연락처1']);
+      if(ph) union(_ak,'P:'+ph);                                   // 신호④ 전화
+      const pn=parseShopName(x['옵션정보']);
+      const nn=normName(pn.name);
+      if(validMergeName(nn)){
+        const f=nameFreq[normAddr(addr)]=nameFreq[normAddr(addr)]||{t1:{},t2:{}};
+        const t=pn.tier===1?f.t1:f.t2;
+        t[nn]=(t[nn]||0)+1;                                        // 신호② 준비: 계열별 상호 빈도
+      }
+    });
     g.forEach(row=>{
       const amtRow=numOf(row['최종 상품별 총 주문금액']);
       r.total+=amtRow;
@@ -1067,24 +1100,27 @@ function buildShops(rows){
     });
   }
 
-  /* ★ 동일샵 판단 (유니온파인드):
-     ① 같은 상호(별칭 정규화 후) 또는 ② 같은 주문자번호(마스킹 없는 구매자 키)를
-     공유하는 주소 레코드들을 하나의 샵으로 병합. 대표 = 가장 최근 주문 레코드. */
+  /* ★ 동일샵 판단 — 스펙 2026-07-19 (docs/shop-merge.md)
+     신호: ①주소(공백 정규화) ②주소별 다수결 상호명 ③대표상호 접두 일치(짧은쪽 4자+) ④유효 전화번호
+     금지: 주문자ID/주문자번호(허브 계정 사고), 행 단위 상호명, 수취인명 */
+  // 신호②: 주소별 대표(최빈) 상호명 연결
+  const repNames=new Set();
+  for(const ad in nameFreq){
+    const f=nameFreq[ad];
+    const pick=t=>{ let rep='',mx=0; for(const n in t) if(t[n]>mx){mx=t[n];rep=n;} return rep; };
+    const rep=pick(f.t1)||pick(f.t2);                 // 상호명 계열 우선, 없으면 인스타 계열
+    if(rep){ union('A:'+ad,'N:'+rep); repNames.add(rep); }
+  }
+  // 신호③: 대표 상호명 접두 일치 (짧은 쪽 4자 이상)
+  const rn=[...repNames];
+  for(let i=0;i<rn.length;i++) for(let j=i+1;j<rn.length;j++){
+    const a=rn[i],b=rn[j], s=a.length<=b.length?a:b, l=a.length<=b.length?b:a;
+    if(s.length>=4 && l.startsWith(s)) union('N:'+a,'N:'+b);
+  }
+  // 연결요소 → 샵 엔티티
   const recsArr=Object.values(recs);
-  const par=recsArr.map((_,i)=>i);
-  const find=i=>par[i]===i?i:(par[i]=find(par[i]));
-  const uni=(a,b)=>{ a=find(a); b=find(b); if(a!==b) par[b]=a; };
-  const nameIdx={}, buyerIdx={};
-  recsArr.forEach((r,i)=>{
-    if(r.shop && r.shop!=='미상'){
-      if(nameIdx[r.shop]!=null) uni(nameIdx[r.shop],i); else nameIdx[r.shop]=i;
-    }
-    for(const b in r.buyers){
-      if(buyerIdx[b]!=null) uni(buyerIdx[b],i); else buyerIdx[b]=i;
-    }
-  });
   const clusters={};
-  recsArr.forEach((r,i)=>{ const g=find(i); (clusters[g]=clusters[g]||[]).push(r); });
+  recsArr.forEach(r=>{ const g=find('A:'+normAddr(r.addr)); (clusters[g]=clusters[g]||[]).push(r); });
   const shops=[], mergedNames=[], addrRep={};
   for(const g in clusters){
     const arr=clusters[g];
@@ -1101,15 +1137,12 @@ function buildShops(rows){
         for(const mo in o.hist) m.hist[mo]=(m.hist[mo]||0)+o.hist[mo];
         for(const mo in o.ph){ const pm=m.ph[mo]=m.ph[mo]||{}; for(const c in o.ph[mo]) pm[c]=(pm[c]||0)+o.ph[mo][c]; }
         for(const c in o.p){ const e=m.p[c]=m.p[c]||[0,0]; e[0]+=o.p[c][0]; e[1]+=o.p[c][1]; }
-        for(const b in o.buyers) m.buyers[b]=1;
       }
     }
     arr.forEach(x=>{ addrRep[x.addr]=m.shop; });
     shops.push(m);
   }
-
   shops.forEach(r=>{
-    delete r.buyers;
     for(const mo in r.hist) r.hist[mo]=Math.round(r.hist[mo]);
     for(const mo in r.ph) for(const c in r.ph[mo]) r.ph[mo][c]=Math.round(r.ph[mo][c]);
     for(const c in r.p) r.p[c]=[Math.round(r.p[c][0]*10)/10, Math.round(r.p[c][1])];
@@ -2195,7 +2228,7 @@ function setData(shops, products, meta, label, diag, days){
   document.getElementById('rp-q').value='';
   document.getElementById('upov').style.display='none';
 
-  try{ localStorage.setItem('drbae_data_v4', JSON.stringify({shops,products,meta,label,diag,days})); }catch(e){}
+  try{ localStorage.setItem('drbae_data_v5', JSON.stringify({shops,products,meta,label,diag,days})); }catch(e){}
   if(mapReady) geocodeAll();
 }
 
@@ -2233,13 +2266,13 @@ upov.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) handleF
 document.addEventListener('dragover',e=>{ e.preventDefault(); if(upov.style.display==='none') upov.style.display='flex'; });
 document.addEventListener('drop',e=>{ e.preventDefault(); });
 document.getElementById('up-clear').onclick=()=>{
-  try{ localStorage.removeItem('drbae_data_v4'); localStorage.removeItem('drbae_geo_v1'); GEO={}; }catch(e){}
+  try{ localStorage.removeItem('drbae_data_v5'); localStorage.removeItem('drbae_geo_v1'); GEO={}; }catch(e){}
   toast('저장된 데이터와 좌표 캐시를 삭제했습니다');
 };
 
 // 초기 화면 + 저장 데이터 자동 복원
 recalcMax(); updateStats(); buildProducts(); buildList();
-let __saved=null; try{ __saved=JSON.parse(localStorage.getItem('drbae_data_v4')||'null'); }catch(e){}
+let __saved=null; try{ __saved=JSON.parse(localStorage.getItem('drbae_data_v5')||'null'); }catch(e){}
 if(__saved&&__saved.shops&&__saved.shops.length){
   setData(__saved.shops,__saved.products,__saved.meta,(__saved.label||'저장된 데이터'),__saved.diag,__saved.days);
   toast('마지막 업로드 데이터를 복원했습니다');
