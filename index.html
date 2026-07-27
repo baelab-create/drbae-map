@@ -205,6 +205,8 @@ body.sheet-open .sheet-handle .hc{transform:rotate(45deg)}
 .upbtn{padding:8px 14px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
   background:var(--accent);color:#fff;border:none;border-radius:9px}
 .upbtn:hover{background:var(--accent-deep)}
+.upbtn.sec{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.upbtn.sec:hover{background:var(--panel);border-color:var(--accent);color:var(--accent-deep)}
 
 .upov{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;
   background:rgba(250,247,246,.93);backdrop-filter:blur(3px);padding:24px}
@@ -652,6 +654,7 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
   </nav>
   <div class="hdr-actions">
     <span class="hdr-file" id="hdr-file"></span>
+    <button class="upbtn sec" id="btn-export" title="현재 데이터가 내장된 index.html을 내려받아 GitHub에 올리면, 모든 기기에서 링크만으로 데이터가 보입니다">🌐 공유용 HTML</button>
     <button class="upbtn" id="btn-upload">⬆ 데이터 업로드</button>
   </div>
 
@@ -779,6 +782,8 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
           <li>네이버 스마트스토어에서 <b>발주발송관리</b> 파일 다운로드</li>
           <li>이 영역에 <b>끌어다 놓기</b> 또는 아래 버튼으로 선택</li>
           <li>자동으로 제품 분류 · 샵 병합 · 지도 표시 → <b>검증 요약</b> 확인</li>
+          <li style="color:#217A33"><b>모든 기기에서 보기</b>: 같은 파일을 <b>data.csv</b>(또는 data.xlsx) 이름으로
+              GitHub 리포에 올려두면, 접속할 때마다 자동으로 불러옵니다</li>
         </ol>
         <button class="uppick" id="btn-pick">파일 선택</button>
         <input type="file" id="file-in" accept=".xlsx,.xls,.csv" hidden>
@@ -1182,10 +1187,9 @@ function buildShops(rows){
   return {shops,products,meta,excluded,mergedNames,rows:rows.length,diag,days};
 }
 
-async function readFile(file){
-  const buf=await file.arrayBuffer();
+function parseBuf(name, buf){
   let wb;
-  if(/\.csv$/i.test(file.name)){
+  if(/\.csv$/i.test(name)){
     let text=new TextDecoder('utf-8').decode(buf);
     if(text.includes('\uFFFD')) text=new TextDecoder('euc-kr').decode(buf);  // cp949 CSV 대응
     text=text.replace(/^\uFEFF/,'');                                          // BOM 제거
@@ -1195,6 +1199,9 @@ async function readFile(file){
   }
   const ws=wb.Sheets[wb.SheetNames[0]];
   return XLSX.utils.sheet_to_json(ws,{defval:null});
+}
+async function readFile(file){
+  return parseBuf(file.name, await file.arrayBuffer());
 }
 /* ================== /DATA LAYER ================== */
 
@@ -2207,6 +2214,7 @@ function setData(shops, products, meta, label, diag, days){
   document.getElementById('dorm-c3').textContent=SHOPS.filter(s=>isDorm(s,3)).length+'곳';
   document.getElementById('dorm-c6').textContent=SHOPS.filter(s=>isDorm(s,6)).length+'곳';
   document.getElementById('hdr-file').textContent=label||'';
+  window.__lastLabel=label||''; window.__lastDiag=diag||null;
   const q=document.getElementById('qual'), qb=document.getElementById('qual-body');
   if(diag){
     const rate=Math.round((diag.opt+diag.name)/(diag.opt+diag.name+diag.base||1)*100);
@@ -2254,6 +2262,28 @@ async function handleFile(file){
   }
 }
 
+async function exportEmbedded(){
+  if(!SHOPS.length){ toast('먼저 데이터를 업로드하세요'); return; }
+  let src;
+  try{
+    const res=await fetch(location.href.split('#')[0].split('?')[0], {cache:'no-store'});
+    if(!res.ok) throw 0;
+    src=await res.text();
+  }catch(e){ toast('배포된 페이지(GitHub Pages)에서만 사용할 수 있습니다'); return; }
+  const payload=JSON.stringify({shops:SHOPS,products:PRODUCTS,meta:META,days:DAYS,
+    diag:window.__lastDiag||null, label:(window.__lastLabel||'게시된 데이터')});
+  const re=/const EMBED = \/\*__EMBED__\*\/[\s\S]*?\/\*__EMBED_END__\*\/;/;
+  if(!re.test(src)){ toast('원본에서 데이터 마커를 찾지 못했습니다'); return; }
+  const out=src.replace(re, ()=>'const EMBED = /*__EMBED__*/'+payload+'/*__EMBED_END__*/;');
+  const blob=new Blob([out],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='index.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+  toast('index.html 다운로드 완료 — GitHub에 올리면 모든 기기에서 보입니다');
+}
+document.getElementById('btn-export').onclick=exportEmbedded;
+
 const upov=document.getElementById('upov'), dz=document.getElementById('dropzone');
 document.getElementById('btn-upload').onclick=()=>{ upov.style.display='flex'; };
 document.getElementById('btn-pick').onclick=()=>document.getElementById('file-in').click();
@@ -2272,12 +2302,40 @@ document.getElementById('up-clear').onclick=()=>{
 
 // 초기 화면 + 저장 데이터 자동 복원
 recalcMax(); updateStats(); buildProducts(); buildList();
-let __saved=null; try{ __saved=JSON.parse(localStorage.getItem('drbae_data_v5')||'null'); }catch(e){}
-if(__saved&&__saved.shops&&__saved.shops.length){
-  setData(__saved.shops,__saved.products,__saved.meta,(__saved.label||'저장된 데이터'),__saved.diag,__saved.days);
-  toast('마지막 업로드 데이터를 복원했습니다');
-}
+const EMBED = /*__EMBED__*/null/*__EMBED_END__*/;
 bootstrap();
+(async function initData(){
+  const okD=d=>d&&d.shops&&d.shops.length;
+  let saved=null; try{ saved=JSON.parse(localStorage.getItem('drbae_data_v5')||'null'); }catch(e){}
+  if(okD(saved)) saved.__tag='saved';
+  // ① 리포에 올려둔 원본 파일 자동 로드 (data.xlsx / data.csv / data.xls)
+  let remote=null;
+  for(const fn of ['data.xlsx','data.csv','data.xls']){
+    try{
+      const res=await fetch(fn,{cache:'no-store'});
+      if(!res.ok) continue;
+      const rows=parseBuf(fn, await res.arrayBuffer());
+      if(!rows||!rows.length) continue;
+      const r=buildShops(rows);
+      remote={shops:r.shops,products:r.products,meta:r.meta,diag:r.diag,days:r.days,
+              label:fn+' (게시 원본) · '+r.meta.from+'~'+r.meta.to, __tag:'remote'};
+      break;
+    }catch(e){ /* 미배포·file:// 등 → 다음 후보 */ }
+  }
+  if(EMBED&&okD(EMBED)) EMBED.__tag='embed';
+  // ② 후보 중 발송일이 가장 최신인 소스 선택 (동률이면 게시 원본 우선)
+  const cands=[remote, EMBED&&okD(EMBED)?EMBED:null, okD(saved)?saved:null].filter(Boolean);
+  if(!cands.length) return;                       // 소스 없음 → 업로드 안내 유지
+  cands.sort((a,b)=>{
+    const ta=String((a.meta||{}).to||''), tb=String((b.meta||{}).to||'');
+    if(ta!==tb) return ta>tb?-1:1;
+    const pr={remote:0,embed:1,saved:2};
+    return pr[a.__tag]-pr[b.__tag];
+  });
+  const s=cands[0];
+  setData(s.shops,s.products,s.meta,(s.label||'데이터'),s.diag,s.days);
+  toast(s.__tag==='remote'?'게시된 원본 파일을 불러왔습니다':(s.__tag==='embed'?'게시된 데이터를 불러왔습니다':'마지막 업로드 데이터를 복원했습니다'));
+})();
 </script>
 </body>
 </html>
