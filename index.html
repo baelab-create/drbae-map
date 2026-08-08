@@ -65,9 +65,9 @@ header{
 .stat b{font-family:var(--mono);font-size:19px;font-weight:600;line-height:1}
 .stat small{font-size:11px;color:var(--mute);margin-top:3px}
 
-body.mj{--accent:var(--teal);--accent-deep:var(--teal-deep);--accent-soft:var(--teal-soft)}
-body.mj .brand .leaf{background:radial-gradient(circle at 35% 30%,#3BC0D4,var(--teal-deep))}
-body.mj .region-bar i{background:linear-gradient(90deg,#5FD1E0,var(--teal-deep))}
+body.mj{--accent:#E03131;--accent-deep:#B02525;--accent-soft:#FDECEC}
+body.mj .brand .leaf{background:radial-gradient(circle at 35% 30%,#F08080,#B02525)}
+body.mj .region-bar i{background:linear-gradient(90deg,#F08A8A,#B02525)}
 
 /* ---------- layout ---------- */
 .wrap{flex:1 1 auto; display:flex; min-height:0}
@@ -134,7 +134,7 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
   cursor:pointer;font-family:inherit;text-align:left;color:var(--ink)}
 .pchip:hover{background:var(--indigo-soft)}
 .pchip .box{width:13px;height:13px;border:1.6px solid #CFBFC0;border-radius:4px;flex:0 0 auto;position:relative}
-.pchip.on .box{background:var(--accent);border-color:var(--accent)}
+.pchip.on .box{background:var(--pc,var(--accent));border-color:var(--pc,var(--accent))}
 .pchip.on .box::after{content:"";position:absolute;left:3.6px;top:.8px;width:3.5px;height:7px;
   border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
 .pchip .pn{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -486,6 +486,50 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
   .sp-main{padding:14px 14px 40px}
 }
 
+/* ---- 마이크로 블랙 ---- */
+body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
+.mbpage{flex-direction:column}
+.mb-top{flex:0 0 auto;padding:16px 24px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+.mb-title{font-size:15px;font-weight:800}
+.mb-title b{font-family:var(--mono)}
+.mb-hint{font-size:11.5px;color:var(--mute);margin-top:4px}
+.mb-list{flex:1 1 auto;overflow-y:auto;padding:10px 24px 40px}
+.mb-list::-webkit-scrollbar{width:9px}
+.mb-list::-webkit-scrollbar-thumb{background:#D5DAE5;border-radius:9px}
+.mb-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line2);border-radius:8px}
+.mb-row:nth-child(even){background:#FBFBFE}
+.mb-row:hover{background:var(--accent-soft)}
+.mb-row .no{font-family:var(--mono);font-size:11.5px;font-weight:700;color:#fff;background:#1B2333;
+  width:26px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.mb-row .who{flex:0 0 150px;min-width:0}
+.mb-row .who b{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-row .who a{font-family:var(--mono);font-size:11px;color:var(--mute);text-decoration:none}
+.mb-row .who a:hover{color:var(--indigo);text-decoration:underline}
+.mb-row .svcs{flex:0 0 210px;display:flex;flex-wrap:wrap;gap:3px}
+.svcchip{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:9px;background:#EEF1F6;color:#3C4658}
+.svcchip.tattoo{background:#1B2333;color:#fff}
+.mb-row .maddr{flex:1 1 auto;font-size:12px;color:var(--mute);min-width:0}
+.mb-row .mgo{flex:0 0 auto;padding:6px 11px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--ink)}
+.mb-row .mgo:hover{border-color:#1B2333;background:#1B2333;color:#fff}
+.mbdot{transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#111;
+  border:2.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.4);cursor:pointer}
+.mbinfo{transform:translate(-50%,calc(-100% - 12px));background:#1B2333;color:#fff;border-radius:12px;
+  padding:12px 14px;min-width:210px;max-width:270px;box-shadow:0 6px 22px rgba(0,0,0,.35);position:relative}
+.mbinfo:after{content:'';position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);
+  border:7px solid transparent;border-bottom:none;border-top-color:#1B2333}
+.mbinfo h4{font-size:13.5px;margin-bottom:4px}
+.mbinfo .sv{font-size:10.5px;color:#B9C1D4;margin-bottom:5px}
+.mbinfo .ad{font-size:10.5px;color:#8F99B0;line-height:1.5}
+.mbinfo a{color:#7DA7F5;font-family:var(--mono);font-size:11px;text-decoration:none}
+.mbinfo .x{position:absolute;top:6px;right:9px;background:none;border:none;color:#8F99B0;font-size:15px;cursor:pointer}
+@media (max-width:820px){
+  .mb-row{flex-wrap:wrap}
+  .mb-row .who{flex:1 1 40%}
+  .mb-row .svcs{flex:1 1 100%;order:3}
+  .mb-row .maddr{flex:1 1 100%;order:4}
+}
+
 @media print{
   body *{visibility:hidden}
   #rpmain,#rpmain *,#nsreport,#nsreport *{visibility:visible}
@@ -566,7 +610,7 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
 .pin:hover .circle,.pin.hot .circle{transform:scale(1.18)}
 .pin.hot .circle{box-shadow:0 0 0 4px rgba(179,43,51,.28),0 3px 8px rgba(31,21,24,.35)}
 .pin.sel .circle{box-shadow:0 0 0 5px rgba(232,134,59,.4),0 3px 8px rgba(27,35,51,.35)}
-.pin.mjr .circle{outline:3px solid #0C8599;outline-offset:1px}
+.pin.mjr .circle{outline:3px solid #E03131;outline-offset:1px}
 .pin .badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);
   background:var(--amber);color:#fff;font-size:9.5px;font-weight:800;padding:1px 5px;border-radius:7px;
   font-family:var(--mono);white-space:nowrap}
@@ -651,10 +695,11 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
     <button class="tab" data-pg="report">샵 리포트</button>
     <button class="tab" data-pg="newshop">신규샵 위치 리포트</button>
     <button class="tab" data-pg="ship">일자별 주문</button>
+    <button class="tab" data-pg="mb">마이크로 블랙</button>
   </nav>
   <div class="hdr-actions">
     <span class="hdr-file" id="hdr-file"></span>
-    <button class="upbtn sec" id="btn-export" title="현재 데이터가 내장된 index.html을 내려받아 GitHub에 올리면, 모든 기기에서 링크만으로 데이터가 보입니다">🌐 공유용 HTML</button>
+    <button class="upbtn sec" id="btn-publish" title="업로드한 원본 파일을 GitHub 리포에 게시합니다 — 모든 기기에서 링크만으로 최신 데이터가 보입니다">☁ GitHub 게시</button>
     <button class="upbtn" id="btn-upload">⬆ 데이터 업로드</button>
   </div>
 
@@ -732,6 +777,10 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="2.2"/><circle cx="12.5" cy="12" r="3.2"/><circle cx="20" cy="12" r="1.6"/></svg>
           <span id="btn-size-label">크기: 금액</span>
         </button>
+        <button class="tbtn" id="btn-mb" title="마이크로 블랙 전문점 27곳을 검정 점으로 표시">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+          <span>블랙 전문점</span>
+        </button>
         <button class="tbtn" id="btn-measure">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 21 21 3"/><circle cx="4.5" cy="19.5" r="2"/><circle cx="19.5" cy="4.5" r="2"/></svg>
           거리 측정
@@ -768,7 +817,7 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
         <span style="font-size:10.5px">원 색상 = <b>시·도</b> (좌측 지역 목록의 색 참조)</span>
       </div>
       <div class="legend-row" id="lg-blue" style="display:none">
-        <i style="width:11px;height:11px;background:#fff;outline:3px solid #0C8599;outline-offset:1px"></i><span>마이크로젝션 구매처 (링)</span>
+        <i style="width:11px;height:11px;background:#fff;outline:3px solid #E03131;outline-offset:1px"></i><span>마이크로젝션 구매처 (링)</span>
       </div>
     </div>
 
@@ -782,8 +831,9 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
           <li>네이버 스마트스토어에서 <b>발주발송관리</b> 파일 다운로드</li>
           <li>이 영역에 <b>끌어다 놓기</b> 또는 아래 버튼으로 선택</li>
           <li>자동으로 제품 분류 · 샵 병합 · 지도 표시 → <b>검증 요약</b> 확인</li>
-          <li style="color:#217A33"><b>모든 기기에서 보기</b>: 같은 파일을 <b>data.csv</b>(또는 data.xlsx) 이름으로
-              GitHub 리포에 올려두면, 접속할 때마다 자동으로 불러옵니다</li>
+          <li style="color:#217A33"><b>모든 기기에서 보기</b>: 토큰을 한 번 설정해 두면, 업로드 시
+              원본이 GitHub에 <b>자동 게시</b>되어 어느 기기에서든 접속만 하면 최신 데이터가 보입니다
+              (수동 방법: 파일을 <b>data.csv</b> 이름으로 리포에 직접 업로드해도 동일)</li>
         </ol>
         <button class="uppick" id="btn-pick">파일 선택</button>
         <input type="file" id="file-in" accept=".xlsx,.xls,.csv" hidden>
@@ -791,6 +841,7 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
         · 필수 컬럼: 주문번호 · 발송일 · 수취인명 · 상품명 · 옵션정보 · 수량 · 통합배송지 · 1년 주문금액 · 최종 상품별 총 주문금액<br>
         · 업로드 후 <b>현황 요약</b> 아코디언에서 분류율·병합 결과를 확인할 수 있습니다.</p>
         <div class="uperr" id="uperr"></div>
+        <button class="uplink" id="up-gh">⚙ GitHub 자동 게시 토큰 설정 / 삭제</button>
         <button class="uplink" id="up-clear">저장된 데이터 · 좌표 캐시 삭제</button>
       </div>
     </div>
@@ -863,6 +914,14 @@ body.nsprint .ns-map-wrap{flex:0 0 340px;height:340px}
   </div>
 </div>
 
+<div class="page-el mbpage" id="page-mb">
+  <div class="mb-top">
+    <div class="mb-title">⚫ 마이크로 블랙 전문점 <b>27곳</b></div>
+    <div class="mb-hint">고정 파트너 리스트 · 행의 [지도] 버튼 또는 지도 탭 툴바의 「⚫ 블랙 전문점」으로 지도에 검정 점으로 표시됩니다</div>
+  </div>
+  <div class="mb-list" id="mb-list"></div>
+</div>
+
 <script>
 /* ================== DATA LAYER (in-browser Excel/CSV parsing) ================== */
 let SHOPS=[], PRODUCTS=[], META={from:'–',to:'–',orders:0};
@@ -870,13 +929,13 @@ let DORM_CUT={};
 let GEO={}; try{ GEO=JSON.parse(localStorage.getItem('drbae_geo_v1')||'{}'); }catch(e){}
 
 const CATALOG=[
- ['EXO_BLUE','엑소토카인 (블루)','skin'],['PDRN','피디로엔 (핑크)','skin'],
- ['TOCO_BRN','토코포르테 (갈색)','skin'],['LIQMASK','리퀴드마스크','skin'],
- ['GEL500','에센스겔 500ml','skin'],['GEL150','에센스겔 150ml','skin'],
+ ['EXO_BLUE','엑소토카인 블루','skin'],['PDRN','피디로엔 핑크','skin'],
+ ['TOCO_BRN','엑소토카인 토코포르테','skin'],['LIQMASK','엑소토카인 리퀴드 마스크','skin'],
+ ['GEL500','엑소토카인 에센스겔 500ml','skin'],['GEL150','엑소토카인 에센스겔 150ml','skin'],
  ['FIRM','퍼밍크림 (장벽 크림)','skin'],['CALM','카밍 마스크 (크레이 팩)','skin'],
- ['EXO_BLACK','엑소토카인 블랙 (메인)','scalp'],['TOCO_LIQ','토코포르테 (액상)','scalp'],
+ ['EXO_BLACK','엑소토카인 블랙','scalp'],['TOCO_LIQ','토코포르테 (액상)','scalp'],
  ['SCALP_B','스칼프 부스터 500ml','scalp'],['SCALP_S','스칼프 샴푸 500ml','scalp'],
- ['CALCI','칼리파우더 (동결건조)','common'],
+ ['CALCI','칼리파우더','common'],
  ['MJ','마이크로젝션','device'],['DERMA','더마커런트 세트','device'],
  ['AIR','에어스프레이','device'],['ADAPTER','더블 어댑터','device'],
  ['SUMMER_SET','여름 피부열 관리 3종 세트','etc'],['TEST_SKIN','스킨부스터 5종 테스트','etc'],
@@ -1205,6 +1264,37 @@ async function readFile(file){
 }
 /* ================== /DATA LAYER ================== */
 
+/* ── 마이크로 블랙 전문점 (고정 리스트) ── g: 지오코딩 보정 주소 */
+const MB_SHOPS=[
+ {nm:'권민경',ph:'01073136956',svc:'두피관리',addr:'서울 강남구 선릉로 711 2층'},
+ {nm:'강청림',ph:'01092295028',svc:'두피문신, 기타 뷰티',addr:'충남 홍성군 홍북읍 충남대로 50 국제아르페온2차 141호 아우라헤어'},
+ {nm:'박세은',ph:'01037260340',svc:'두피문신',addr:'전북특별자치도 완산구 우전로 250 문학빌딩 1층 젊어지다',g:'전북특별자치도 전주시 완산구 우전로 250'},
+ {nm:'유병웅',ph:'01080002920',svc:'두피관리, 두피문신',addr:'경기도 부천시 길주로 91 비잔티움상동 416호'},
+ {nm:'빈수현',ph:'01038470096',svc:'두피문신',addr:'경기도 수원시 팔달구 인계동 1031-14 정석빌딩 7층'},
+ {nm:'명주성',ph:'01046136568',svc:'두피관리, 두피문신',addr:'광주광역시 서구 상무중앙로 43 BYC빌딩 414호 탈모왕광주'},
+ {nm:'박정철',ph:'01051750234',svc:'피부관리, 두피관리, 두피문신',addr:'대구 중구 달구벌대로 2094 대구메디스퀘어 4층 401호 마이크로청담대구'},
+ {nm:'정채안',ph:'01023498894',svc:'두피문신',addr:'울산광역시 중구 성남동 먹자거리 2, 1층 마이크로청담 울산',g:'울산광역시 중구 성남동'},
+ {nm:'나혁',ph:'01963698462',svc:'두피문신',addr:'강남구 역삼동 783-18 4층',g:'서울 강남구 역삼동 783-18'},
+ {nm:'김현준',ph:'01023521051',svc:'두피문신',addr:'서울 송파구 위례송파로 40 호반써밋 1차 1205동 704호'},
+ {nm:'정재연',ph:'01067609772',svc:'두피문신',addr:'경기도 남양주시 호평로46번길 8 홍조프라자 811호 픽스칼프'},
+ {nm:'양윤호',ph:'01050387696',svc:'두피문신',addr:'부산 부산진구 가야대로703번길 15, 5층 킨크스칼프'},
+ {nm:'이정은',ph:'01068527025',svc:'두피문신',addr:'경남 진주시 충무공동 에나로 130 베네비앙 9층 907호 티안나도트'},
+ {nm:'정지혜',ph:'01080703195',svc:'피부관리, 두피관리, 속눈썹, 반영구문신',addr:'경기도 광주시 태전동2길 9 101호 하이글림'},
+ {nm:'최소연',ph:'01046464961',svc:'피부관리',addr:'경기도 고양시 덕양구 지정로 17, 618호 아크네스킨랩'},
+ {nm:'이설희',ph:'01092966707',svc:'피부관리, 반영구문신',addr:'서울시 송파구 백제고분로7길 49 311호 안나뷰띠끄'},
+ {nm:'공지온',ph:'01089475021',svc:'반영구문신, 두피문신',addr:'서울시 송파구 문정동 639-5 힐스테이트 에코송파 1층 134호 (세론)'},
+ {nm:'오영례',ph:'01067557334',svc:'두피관리',addr:'월드컵4강로28번길 17 아우라헤어살롱',g:'광주광역시 서구 월드컵4강로28번길 17'},
+ {nm:'최서하',ph:'01063742104',svc:'두피관리, 두피문신',addr:'전북 정읍시 정읍남로 1447-14'},
+ {nm:'공진서',ph:'01041528486',svc:'속눈썹, 반영구문신, 두피문신',addr:'광주광역시 첨단중앙로182번길 90 어썸시티 상가2층 205호',g:'광주광역시 광산구 첨단중앙로182번길 90'},
+ {nm:'이주미',ph:'01065241424',svc:'피부관리, 두피관리, 속눈썹, 반영구문신, 두피문신',addr:'광주광역시 동구 구성로152번길 20 아송빌딩 2층 더미인나라'},
+ {nm:'이서현',ph:'01063940477',svc:'두피문신, 기타 뷰티',addr:'인천 서구 청라에메랄드로 99 지젤엠 2층 252호 리브헤어'},
+ {nm:'김채원',ph:'01052024788',svc:'반영구문신, 두피문신',addr:'경기도 고양시 일산서구 킨텍스로 240 포레나킨텍스 105동 2804호'},
+ {nm:'김종규 (사업자 백현주)',ph:'01075631882',svc:'두피문신',addr:'서울시 금천구 시흥대로 315 지하1층 08호'},
+ {nm:'정지혜',ph:'01020038453',svc:'반영구문신, 두피문신',addr:'신사동 511-7 2층 도트앤라인',g:'서울 강남구 신사동 511-7'},
+ {nm:'장현진',ph:'01098949847',svc:'속눈썹, 반영구문신',addr:'대구 달서구 조암남로 85 1층 121호 이프먼트'},
+ {nm:'이명자',ph:'01067869163',svc:'반영구문신, 두피문신, 기타 뷰티',addr:'대구 남구 명덕로14길 17 (세니떼뷰티)'}
+];
+
 const fmt = n => n>=10000 ? (n/10000).toLocaleString('ko-KR',{maximumFractionDigits:0})+'만' : n.toLocaleString('ko-KR');
 const fmtWon = n => n.toLocaleString('ko-KR')+'원';
 const PROX_M = 1000;   // 근접 경고 반경(m)
@@ -1309,7 +1399,7 @@ function buildList(){
       const sub = dormSel ? `${s.sigungu} · 마지막 ${s.last}`
                 : (blueShop(s) && !selP.size ? `${s.sigungu} · 마젝 ${s.mjQty}박스` : s.sigungu);
       const b=document.createElement('button'); b.className='shop'; b.dataset.i=s._i;
-      b.innerHTML=`<span class="dot" style="background:${sidoColor(s)}${blueShop(s)?';box-shadow:0 0 0 2px #0C8599':''}"></span>
+      b.innerHTML=`<span class="dot" style="background:${sidoColor(s)}${blueShop(s)?';box-shadow:0 0 0 2px #E03131':''}"></span>
         <span class="shop-txt"><span class="shop-name">${s.shop}</span>
         <span class="shop-sub">${sub}</span></span>
         <span class="shop-val">${v>0?fmt(v):'–'}</span>`;
@@ -1618,10 +1708,11 @@ function buildProducts(){
     arr.forEach(p=>{
       const b=document.createElement('button');
       b.className='pchip'+(selP.has(p.c)?' on':''); b.dataset.c=p.c;
-      b.innerHTML=`<span class="box"></span><span class="pn">${p.n}</span>
-        <span class="pbar"><i style="width:${Math.round(p.amt/maxA*100)}%"></i></span>
+      const pname=PNAME[p.c]||p.n, pc=PCOLOR[p.c]||'#868E96';
+      b.innerHTML=`<span class="box" style="border-color:${pc};--pc:${pc}"></span><span class="pn">${pname}</span>
+        <span class="pbar"><i style="width:${Math.round(p.amt/maxA*100)}%;background:${pc}"></i></span>
         <span class="ps">${p.shops}곳</span>`;
-      b.title=`${p.n} · ${p.shops}곳 · ${p.amt.toLocaleString('ko-KR')}원`;
+      b.title=`${pname} · ${p.shops}곳 · ${p.amt.toLocaleString('ko-KR')}원`;
       b.onclick=()=>{ selP.has(p.c)?selP.delete(p.c):selP.add(p.c); applyFilters(); };
       box.appendChild(b);
     });
@@ -1684,7 +1775,8 @@ let curPage='map', rankSort='annual', recentDesc=true, reportIdx=null;
 
 function switchPage(pg){
   curPage=pg;
-  document.body.classList.remove('pg-rank','pg-report','pg-newshop');
+  document.body.classList.remove('pg-rank','pg-report','pg-newshop','pg-mb');
+  if(pg==='mb') document.body.classList.add('pg-mb');
   if(pg==='rank') document.body.classList.add('pg-rank');
   else if(pg==='report') document.body.classList.add('pg-report');
   else if(pg==='newshop') document.body.classList.add('pg-newshop');
@@ -1824,8 +1916,27 @@ function monthRange(from,to){
   return out;
 }
 const GENERIC=new Set(['BASE','DEMO','BANNER','TEST_SKIN','TEST_SCALP']);
-const PAL=['#3B5BDB','#D9962F','#B197FC','#8CA3B8','#C2255C','#2F9E44','#845EF7','#E8590C','#1098AD','#5C940D','#A61E4D','#7048E8'];
-const PCOLOR={}; CATALOG.forEach((e,i)=>PCOLOR[e[0]]=PAL[i%PAL.length]);
+/* ── 닥터배 제품 컬러 팔레트 (브랜드 공식 고정색) ── */
+const PCOLOR={
+  EXO_BLUE :'#2F80D0',   // 엑소토카인 블루
+  PDRN     :'#D34E86',   // 피디로엔 핑크
+  CALCI    :'#71747B',   // 칼리파우더
+  TOCO_BRN :'#7A4A1E',   // 엑소토카인 토코포르테
+  GEL500   :'#A9763F',   // 엑소토카인 에센스겔
+  GEL150   :'#C79A5B',   //   └ 150ml (에센스겔 파생 톤)
+  LIQMASK  :'#22355F',   // 엑소토카인 리퀴드 마스크
+  EXO_BLACK:'#111111',   // 엑소토카인 블랙
+  /* 팔레트 외 제품 — 브랜드색과 겹치지 않게 배정 */
+  TOCO_LIQ :'#E07C24',   // 토코포르테 액상 (밝은 브라운-오렌지)
+  MJ       :'#E03131',   // 마이크로젝션 (레드 — 지도 마젝 링과 동일)
+  DERMA    :'#7048E8',   // 더마커런트 (바이올렛)
+  AIR      :'#4DABF7', ADAPTER:'#64748B',
+  FIRM     :'#2F9E44', CALM:'#82C91E',
+  SCALP_B  :'#B197FC', SCALP_S:'#FF8787',
+  SUMMER_SET:'#FCC419', TEST_SKIN:'#ADB5BD', TEST_SCALP:'#868E96',
+  DEMO     :'#D0BFFF', BANNER:'#F783AC', BASE:'#CED4DA'
+};
+CATALOG.forEach(e=>{ if(!PCOLOR[e[0]]) PCOLOR[e[0]]='#868E96'; });
 const linesOf=s=>Object.keys(s.p).filter(c=>!GENERIC.has(c));
 const getLL=s=> (s.lat!=null)?[s.lat,s.lng]:(GEO[s.addr]||null);
 const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
@@ -2164,6 +2275,96 @@ function selectShip(d){
   main.scrollTop=0;
 }
 
+/* ---------- 마이크로 블랙 레이어/탭 ---------- */
+let mbOn=false, mbGeo=false, mbMarks=[], mbInfoOv=null;
+function mbSvcChips(svc){
+  return svc.split(',').map(s=>s.trim()).filter(Boolean)
+    .map(s=>`<span class="svcchip${s==='두피문신'?' tattoo':''}">${s}</span>`).join('');
+}
+function buildMbList(){
+  const box=document.getElementById('mb-list'); box.innerHTML='';
+  MB_SHOPS.forEach((m,i)=>{
+    const r=document.createElement('div'); r.className='mb-row';
+    r.innerHTML=`<span class="no">${i+1}</span>
+      <span class="who"><b>${m.nm}</b><a href="tel:${m.ph}">${m.ph.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-$2-$3')}</a></span>
+      <span class="svcs">${mbSvcChips(m.svc)}</span>
+      <span class="maddr">${m.addr}</span>
+      <button class="mgo">📍 지도</button>`;
+    r.querySelector('.mgo').onclick=()=>mbLocate(i);
+    box.appendChild(r);
+  });
+}
+function mbCloseInfo(){ if(mbInfoOv){ mbInfoOv.setMap(null); mbInfoOv=null; } }
+function mbShowInfo(m){
+  mbCloseInfo();
+  const el=document.createElement('div'); el.className='mbinfo';
+  el.innerHTML=`<button class="x">&times;</button><h4>⚫ ${m.nm}</h4>
+    <div class="sv">${m.svc}</div><div class="ad">${m.addr}</div>
+    <a href="tel:${m.ph}">${m.ph}</a>`;
+  el.querySelector('.x').onclick=mbCloseInfo;
+  mbInfoOv=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(m.lat,m.lng),content:el,yAnchor:0,xAnchor:0,zIndex:30001});
+  mbInfoOv.setMap(map);
+}
+function mbGeocodeAll(cb){
+  if(mbGeo){ if(cb)cb(); return; }
+  if(!geocoder){ toast('지도 준비 중 — 잠시 후 다시 시도하세요'); return; }
+  let done=0, failed=[];
+  (function next(k){
+    if(k>=MB_SHOPS.length){
+      mbGeo=true;
+      try{ localStorage.setItem('drbae_geo_v1', JSON.stringify(GEO)); }catch(e){}
+      if(failed.length){ toast(`블랙 전문점 ${done}곳 표시 · 위치 미확인 ${failed.length}곳`); console.warn('블랙 미매칭:',failed); }
+      if(cb)cb(); return;
+    }
+    const m=MB_SHOPS[k], q=m.g||m.addr;
+    const c=GEO['MB:'+m.addr];
+    const place=(lat,lng,save)=>{ m.lat=lat; m.lng=lng; if(save) GEO['MB:'+m.addr]=[lat,lng];
+      mbAddMark(m); done++; };
+    if(c){ place(c[0],c[1],false); next(k+1); return; }
+    geocoder.addressSearch(q,(r,st)=>{
+      if(st===kakao.maps.services.Status.OK&&r[0]){ place(+r[0].y,+r[0].x,true); return setTimeout(()=>next(k+1),35); }
+      places.keywordSearch(q,(r2,st2)=>{
+        if(st2===kakao.maps.services.Status.OK&&r2[0]){ place(+r2[0].y,+r2[0].x,true); }
+        else failed.push(m.nm+' / '+m.addr);
+        setTimeout(()=>next(k+1),35);
+      });
+    });
+  })(0);
+}
+function mbAddMark(m){
+  const el=document.createElement('div'); el.className='mbdot'; el.title='⚫ '+m.nm;
+  el.onclick=e=>{ e.stopPropagation(); mbShowInfo(m); };
+  const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(m.lat,m.lng),content:el,yAnchor:.5,xAnchor:.5,zIndex:25000});
+  if(mbOn) ov.setMap(map);
+  mbMarks.push(ov);
+}
+function mbToggle(force){
+  mbOn = force!==undefined?force:!mbOn;
+  document.getElementById('btn-mb').classList.toggle('on',mbOn);
+  if(mbOn){
+    mbGeocodeAll(()=>{ mbMarks.forEach(o=>o.setMap(map)); });
+    mbMarks.forEach(o=>o.setMap(map));
+    toast('⚫ 마이크로 블랙 전문점 표시 ON');
+  }else{
+    mbMarks.forEach(o=>o.setMap(null)); mbCloseInfo();
+    toast('블랙 전문점 표시 OFF');
+  }
+}
+document.getElementById('btn-mb').onclick=()=>{ if(!map){toast('지도 로딩 중');return;} mbToggle(); };
+function mbLocate(i){
+  const m=MB_SHOPS[i];
+  switchPage('map');
+  setTimeout(()=>{
+    if(!map){ toast('지도는 배포 주소에서 표시됩니다'); return; }
+    map.relayout();
+    if(!mbOn) mbToggle(true);
+    const go=()=>{ if(m.lat){ map.setLevel(4); map.setCenter(new kakao.maps.LatLng(m.lat,m.lng)); mbShowInfo(m); }
+                   else setTimeout(go,300); };
+    go();
+  },80);
+}
+buildMbList();
+
 /* ---------- accordions ---------- */
 document.querySelectorAll('.sec-h').forEach(hd=>hd.onclick=()=>hd.parentElement.classList.toggle('collapsed'));
 
@@ -2244,7 +2445,9 @@ async function handleFile(file){
   const err=document.getElementById('uperr'); err.textContent='';
   try{
     toast('파일 분석 중…');
-    const rows=await readFile(file);
+    const __buf=await file.arrayBuffer();
+    const rows=parseBuf(file.name,__buf);
+    window.__lastRaw={name:file.name, buf:__buf};
     if(!rows.length) throw new Error('읽을 수 있는 데이터 행이 없습니다');
     const res=buildShops(rows);
     setData(res.shops,res.products,res.meta,
@@ -2255,6 +2458,7 @@ async function handleFile(file){
     if(res.mergedNames.length) msg+=` · 동일상호 병합 ${res.mergedNames.length}건`;
     toast(msg);
     if(res.mergedNames.length) console.info('동일 상호 병합:', res.mergedNames);
+    publishToGitHub(false);                          // 토큰 설정 시 자동 게시
   }catch(e){
     document.getElementById('upov').style.display='flex';
     err.textContent='⚠ '+(e.message||'파일을 읽지 못했습니다');
@@ -2262,27 +2466,45 @@ async function handleFile(file){
   }
 }
 
-async function exportEmbedded(){
-  if(!SHOPS.length){ toast('먼저 데이터를 업로드하세요'); return; }
-  let src;
-  try{
-    const res=await fetch(location.href.split('#')[0].split('?')[0], {cache:'no-store'});
-    if(!res.ok) throw 0;
-    src=await res.text();
-  }catch(e){ toast('배포된 페이지(GitHub Pages)에서만 사용할 수 있습니다'); return; }
-  const payload=JSON.stringify({shops:SHOPS,products:PRODUCTS,meta:META,days:DAYS,
-    diag:window.__lastDiag||null, label:(window.__lastLabel||'게시된 데이터')});
-  const re=/const EMBED = \/\*__EMBED__\*\/[\s\S]*?\/\*__EMBED_END__\*\/;/;
-  if(!re.test(src)){ toast('원본에서 데이터 마커를 찾지 못했습니다'); return; }
-  const out=src.replace(re, ()=>'const EMBED = /*__EMBED__*/'+payload+'/*__EMBED_END__*/;');
-  const blob=new Blob([out],{type:'text/html'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='index.html';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href),3000);
-  toast('index.html 다운로드 완료 — GitHub에 올리면 모든 기기에서 보입니다');
+/* ── GitHub 자동 게시: 업로드 원본을 리포에 커밋 → 모든 기기에서 최신 데이터 ── */
+const GH={owner:'baelab-create', repo:'drbae-map', branch:'main'};
+function ghToken(){ try{ return localStorage.getItem('drbae_gh_token')||''; }catch(e){ return ''; } }
+function bufToB64(buf){
+  const u=new Uint8Array(buf); let s=''; const CH=0x8000;
+  for(let i=0;i<u.length;i+=CH) s+=String.fromCharCode.apply(null,u.subarray(i,i+CH));
+  return btoa(s);
 }
-document.getElementById('btn-export').onclick=exportEmbedded;
+async function askToken(){
+  const t=prompt('GitHub Personal Access Token을 입력하세요.\n\n발급: GitHub → Settings → Developer settings → Fine-grained tokens\n· Repository access: Only select → '+GH.owner+'/'+GH.repo+'\n· Permissions: Contents = Read and write\n\n토큰은 이 브라우저에만 저장되며 게시되는 HTML에 포함되지 않습니다.');
+  if(t&&t.trim()){ try{ localStorage.setItem('drbae_gh_token',t.trim()); }catch(e){} toast('토큰 저장 완료'); return t.trim(); }
+  return '';
+}
+async function publishToGitHub(manual){
+  const raw=window.__lastRaw;
+  if(!raw){ if(manual) toast('먼저 파일을 업로드하세요'); return; }
+  let tok=ghToken();
+  if(!tok){
+    if(!manual){ toast('☁ 자동 게시 안됨 — 상단 「GitHub 게시」로 토큰을 설정하세요'); return; }
+    tok=await askToken(); if(!tok) return;
+  }
+  const ext=(raw.name.match(/\.(xlsx|xls|csv)$/i)||[0,'csv'])[1].toLowerCase();
+  const path='data.'+ext;
+  toast('GitHub 게시 중… ('+path+')');
+  const api=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${path}`;
+  const hd={'Authorization':'Bearer '+tok,'Accept':'application/vnd.github+json'};
+  let sha=null;
+  try{ const r=await fetch(api+'?ref='+GH.branch,{headers:hd}); if(r.ok) sha=(await r.json()).sha; }catch(e){}
+  const body={message:'data: '+raw.name+' 게시 (대시보드 자동)', content:bufToB64(raw.buf), branch:GH.branch};
+  if(sha) body.sha=sha;
+  try{
+    const res=await fetch(api,{method:'PUT',headers:{...hd,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(res.ok){ toast('✓ GitHub 게시 완료 — 모든 기기에서 최신 데이터가 보입니다'); }
+    else if(res.status===401||res.status===403){ toast('토큰 인증 실패 — 「GitHub 게시」를 눌러 토큰을 다시 설정하세요'); try{localStorage.removeItem('drbae_gh_token');}catch(e){} }
+    else if(res.status===404){ toast('리포를 찾지 못했습니다 — 토큰의 저장소 권한을 확인하세요'); }
+    else toast('게시 실패 ('+res.status+')');
+  }catch(e){ toast('게시 실패 — 네트워크 오류'); }
+}
+document.getElementById('btn-publish').onclick=()=>publishToGitHub(true);
 
 const upov=document.getElementById('upov'), dz=document.getElementById('dropzone');
 document.getElementById('btn-upload').onclick=()=>{ upov.style.display='flex'; };
@@ -2295,6 +2517,14 @@ upov.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) handleF
 // 지도 위로 바로 떨어뜨려도 받기
 document.addEventListener('dragover',e=>{ e.preventDefault(); if(upov.style.display==='none') upov.style.display='flex'; });
 document.addEventListener('drop',e=>{ e.preventDefault(); });
+document.getElementById('up-gh').onclick=async()=>{
+  if(ghToken()){
+    if(confirm('저장된 GitHub 토큰이 있습니다.\n[확인] = 토큰 삭제  /  [취소] = 새 토큰으로 재설정')){
+      try{ localStorage.removeItem('drbae_gh_token'); }catch(e){}
+      toast('토큰을 삭제했습니다');
+    } else await askToken();
+  } else await askToken();
+};
 document.getElementById('up-clear').onclick=()=>{
   try{ localStorage.removeItem('drbae_data_v5'); localStorage.removeItem('drbae_geo_v1'); GEO={}; }catch(e){}
   toast('저장된 데이터와 좌표 캐시를 삭제했습니다');
@@ -2308,19 +2538,29 @@ bootstrap();
   const okD=d=>d&&d.shops&&d.shops.length;
   let saved=null; try{ saved=JSON.parse(localStorage.getItem('drbae_data_v5')||'null'); }catch(e){}
   if(okD(saved)) saved.__tag='saved';
-  // ① 리포에 올려둔 원본 파일 자동 로드 (data.xlsx / data.csv / data.xls)
+  // ① 리포에 게시된 원본 파일 자동 로드
+  //    raw.githubusercontent(커밋 후 수초 내 반영)를 우선, 페이지 상대경로를 폴백으로.
+  //    이름이 여러 개면(data.xlsx·data.csv 혼재) 전부 파싱해 발송일이 최신인 쪽 사용.
   let remote=null;
-  for(const fn of ['data.xlsx','data.csv','data.xls']){
+  const tried=new Set();
+  const urls=[];
+  ['data.xlsx','data.csv','data.xls'].forEach(fn=>{
+    urls.push([fn, `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/${fn}`]);
+    urls.push([fn, fn]);
+  });
+  for(const [fn,url] of urls){
+    if(tried.has(fn)) continue;
     try{
-      const res=await fetch(fn,{cache:'no-store'});
+      const res=await fetch(url,{cache:'no-store'});
       if(!res.ok) continue;
       const rows=parseBuf(fn, await res.arrayBuffer());
       if(!rows||!rows.length) continue;
+      tried.add(fn);
       const r=buildShops(rows);
-      remote={shops:r.shops,products:r.products,meta:r.meta,diag:r.diag,days:r.days,
-              label:fn+' (게시 원본) · '+r.meta.from+'~'+r.meta.to, __tag:'remote'};
-      break;
-    }catch(e){ /* 미배포·file:// 등 → 다음 후보 */ }
+      const cand={shops:r.shops,products:r.products,meta:r.meta,diag:r.diag,days:r.days,
+                  label:fn+' (게시 원본) · '+r.meta.from+'~'+r.meta.to, __tag:'remote'};
+      if(!remote || String((cand.meta||{}).to||'') > String((remote.meta||{}).to||'')) remote=cand;
+    }catch(e){ /* 미배포·차단 등 → 다음 후보 */ }
   }
   if(EMBED&&okD(EMBED)) EMBED.__tag='embed';
   // ② 후보 중 발송일이 가장 최신인 소스 선택 (동률이면 게시 원본 우선)
