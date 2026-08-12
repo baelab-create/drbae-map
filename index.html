@@ -1012,12 +1012,25 @@ function productsOfD(opt, nm){
     if(nm.includes('첫구매')||nm.includes('데모')) ps.add('DEMO');
     else if(nm.includes('여름 피부열')) ps.add('SUMMER_SET');
     else if(nm.includes('리퀴드')&&nm.includes('마스크')) ps.add('LIQMASK');
+    else if(nm.includes('토코포르테')&&nm.includes('액상')) ps.add('TOCO_LIQ');
     else if(nm.includes('토코포르테')) ps.add('TOCO_BRN');
     else if(nm.includes('칼리파우더')) ps.add('CALCI');
     else if(nm.includes('퍼밍')&&nm.includes('카밍')){ps.add('FIRM');ps.add('CALM');}
     else if(nm.includes('마이크로젝션')) ps.add('MJ');
     else if(nm.includes('퍼밍')) ps.add('FIRM');
     else if(nm.includes('더마커런트')) ps.add('DERMA');
+    // ── 상품명이 제품명 그대로인 행(포장 프로그램 서비스 CSV 등) ──
+    else if(nm.includes('엑소토카인 블랙')) ps.add('EXO_BLACK');
+    else if(nm.includes('에센스겔')) ps.add(nm.includes('150')?'GEL150':'GEL500');
+    else if(nm.includes('엑소토카인')) ps.add('EXO_BLUE');
+    else if(nm.includes('피디로엔')) ps.add('PDRN');
+    else if(nm.includes('스칼프 부스터')) ps.add('SCALP_B');
+    else if(nm.includes('스칼프 샴푸')) ps.add('SCALP_S');
+    else if(nm.includes('카밍')) ps.add('CALM');
+    else if(nm.includes('스킨부스터 5종')) ps.add('TEST_SKIN');
+    else if(nm.includes('두피 테스트')) ps.add('TEST_SCALP');
+    else if(nm.includes('에어스프레이')) ps.add('AIR');
+    else if(nm.includes('더블 어댑터')) ps.add('ADAPTER');
     else if(nm.includes('배너')) ps.add('BANNER');
     else ps.add('BASE');
   }
@@ -1086,16 +1099,24 @@ function toYMD(v){
 const numOf=v=> typeof v==='number'?v:(parseFloat(String(v??'').replace(/,/g,''))||0);
 
 function buildShops(rows){
-  const REQ=['주문번호','발송일','수취인명','상품명','옵션정보','수량','통합배송지','1년 주문금액','최종 상품별 총 주문금액'];
+  const REQ=['발송일','수취인명','상품명','옵션정보','수량','통합배송지'];
   const missing=REQ.filter(c=>!(c in rows[0]));
   if(missing.length) throw new Error('필수 컬럼 누락: '+missing.join(', '));
+  const hasAmt=('최종 상품별 총 주문금액' in rows[0]);      // 포장 프로그램 CSV엔 금액 없음 → 0 처리
+  const hasRep=('대표샵명' in rows[0]);                     // 병합 완료 CSV → 대표샵명을 샵 키로 사용
   const data=rows.filter(r=>r['통합배송지']!=null&&String(r['통합배송지']).trim()!=='');
   const excluded=rows.length-data.length;
   if(!data.length) throw new Error('배송지가 있는 데이터 행이 없습니다');
 
-  const byAddr={};
+  const byAddr={}, repCnt={};
   data.forEach(r=>{ const a=r['통합배송지'];
-    (byAddr[a]=byAddr[a]||{opts:[],recv:r['수취인명']}).opts.push(r['옵션정보']); });
+    (byAddr[a]=byAddr[a]||{opts:[],recv:r['수취인명']}).opts.push(r['옵션정보']);
+    if(hasRep){ const rp=String(r['대표샵명']||'').trim();
+      if(rp){ const ra=normAddr(a); (repCnt[ra]=repCnt[ra]||{})[rp]=(repCnt[ra][rp]||0)+1; } } });
+  const repOf={};   // normAddr → 대표샵명 (주소별 최빈값 — 행 간 표기가 흔들려도 안정)
+  for(const ra in repCnt){ let best='',bc=0;
+    for(const n in repCnt[ra]) if(repCnt[ra][n]>bc){ bc=repCnt[ra][n]; best=n; }
+    repOf[ra]=best; }
   const bestName={}; let recvShops=0;
   for(const a in byAddr){
     bestName[a]=cleanShop(byAddr[a].opts, byAddr[a].recv);
@@ -1184,12 +1205,17 @@ function buildShops(rows){
   // 연결요소 → 샵 엔티티
   const recsArr=Object.values(recs);
   const clusters={};
-  recsArr.forEach(r=>{ const g=find('A:'+normAddr(r.addr)); (clusters[g]=clusters[g]||[]).push(r); });
+  // 대표샵명 컬럼이 있으면(포장 프로그램·자동 게시 CSV) 그 값이 곧 병합 키 —
+  // 원본에서 병합이 끝난 상태이므로 자체 union-find 신호는 쓰지 않는다.
+  recsArr.forEach(r=>{ const ra=normAddr(r.addr);
+    const g = hasRep ? (repOf[ra] ? 'R:'+repOf[ra] : 'A:'+ra) : find('A:'+ra);
+    (clusters[g]=clusters[g]||[]).push(r); });
   const shops=[], mergedNames=[], addrRep={};
   for(const g in clusters){
     const arr=clusters[g];
     arr.sort((a,b)=> a.last>b.last?-1:1);
     const m=arr[0];
+    if(hasRep && g.charAt(0)==='R') m.shop=g.slice(2);   // 표시명도 대표샵명으로 통일
     if(arr.length>1){
       const names=[...new Set(arr.map(x=>x.shop))];
       mergedNames.push(`${m.shop} (${arr.length}개 주소${names.length>1?' · 통합: '+names.join(' / '):''})`);
@@ -1240,9 +1266,10 @@ function buildShops(rows){
     orders.sort((a,b)=>b.total-a.total);
     return {d, n:orders.length, total:orders.reduce((x,o)=>x+o.total,0), orders};
   });
+  meta.noAmt=!hasAmt; meta.hasRep=hasRep;
   const diag={rows:rows.length, excluded,
     opt:diagC.opt, name:diagC.name, base:diagC.base, baseAmt:Math.round(diagC.baseAmt),
-    recvShops, merged:mergedNames.length, mergedNames};
+    recvShops, merged:mergedNames.length, mergedNames, hasRep};
   return {shops,products,meta,excluded,mergedNames,rows:rows.length,diag,days};
 }
 
@@ -2409,6 +2436,15 @@ function setData(shops, products, meta, label, diag, days){
   document.querySelectorAll('.dbtn').forEach(x=>x.classList.remove('on'));
   document.body.classList.remove('mj');
 
+  // 금액 컬럼이 없는 파일(포장 프로그램 CSV 등)은 크기=금액 표현이 불가 → 동일 크기로 전환
+  if(META.noAmt && sizeMode==='value'){
+    sizeMode='uniform';
+    document.getElementById('btn-size-label').textContent='크기: 동일';
+    document.getElementById('btn-size').classList.add('on');
+    document.getElementById('legend').style.opacity=.45;
+    toast('금액 컬럼이 없는 파일 — 마커를 동일 크기로 표시합니다');
+  }
+
   // 표시 갱신
   document.getElementById('dr-from').textContent=META.from;
   document.getElementById('dr-to').textContent=META.to;
@@ -2424,6 +2460,7 @@ function setData(shops, products, meta, label, diag, days){
     qb.innerHTML=`
       <div class="qrow"><span>제품 분류율 (옵션 ${diag.opt} · 상품명 ${diag.name}행)</span><b>${rate}%</b></div>
       <div class="qrow ${diag.base?'warnq':''}"><span>기타 분류 (브로셔·세미나 등)</span><b>${diag.base}행 · ${diag.baseAmt.toLocaleString('ko-KR')}원</b></div>
+      ${diag.hasRep?'<div class="qrow"><span>샵 병합 기준</span><b>대표샵명 컬럼 (원본에서 병합 완료)</b></div>':''}
       <div class="qrow"><span>동일 상호 병합</span><b>${diag.merged}건</b></div>
       <div class="qrow ${diag.recvShops?'warnq':''}"><span>상호 미기재 (수취인명 표시)</span><b>${diag.recvShops}곳</b></div>
       ${diag.excluded?`<div class="qrow warnq"><span>배송지 없음 제외</span><b>${diag.excluded}행</b></div>`:''}`;
