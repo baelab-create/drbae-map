@@ -793,7 +793,7 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
 
       <div class="card-t" id="panel-measure" style="display:none">
         <h4>📏 두 지점 간 거리</h4>
-        <p class="hint" id="measure-hint">지도에서 <b>샵 1</b>을 클릭하세요.</p>
+        <p class="hint" id="measure-hint">지도의 핀 또는 왼쪽 목록에서 <b>샵 1</b>을 클릭하세요.</p>
         <div id="measure-result"></div>
       </div>
 
@@ -1508,7 +1508,8 @@ function addMarker(s,lat,lng){
   const el=document.createElement('div'); el.className='pin';
   el.innerHTML='<div class="circle"></div>';
   el.onclick=()=>onShopClick(s._i,false);
-  const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:el,yAnchor:.5,xAnchor:.5});
+  // clickable:true — 지도 팬/클릭이 핀 클릭을 가로채지 않도록 (거리측정·정보창 클릭이 터치/실클릭에서 씹히는 문제 방지)
+  const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:el,yAnchor:.5,xAnchor:.5,clickable:true});
   overlays[s._i]={ov,el,pos:new kakao.maps.LatLng(lat,lng)};
   styleMarker(s);
 }
@@ -1563,7 +1564,7 @@ function showInfo(s,pos){
   el.querySelector('.close').onclick=()=>{infoOverlay.setMap(null);infoOverlay=null;};
   el.querySelector('[data-a="rank"]').onclick=()=>gotoRank(s._i);
   el.querySelector('[data-a="rep"]').onclick=()=>{ switchPage('report'); selectReport(s._i); };
-  infoOverlay=new kakao.maps.CustomOverlay({position:pos,content:el,yAnchor:1,xAnchor:.5,zIndex:9999});
+  infoOverlay=new kakao.maps.CustomOverlay({position:pos,content:el,yAnchor:1,xAnchor:.5,zIndex:9999,clickable:true});
   infoOverlay.setMap(map);
 }
 
@@ -1586,7 +1587,7 @@ function clearMeasure(){
   document.querySelectorAll('.pin .badge').forEach(b=>b.remove());
   measurePick=[];
   document.getElementById('measure-result').innerHTML='';
-  document.getElementById('measure-hint').innerHTML='지도에서 <b>샵 1</b>을 클릭하세요.';
+  document.getElementById('measure-hint').innerHTML='지도의 핀 또는 왼쪽 목록에서 <b>샵 1</b>을 클릭하세요.';
 }
 function clearNew(){
   if(newMarker){newMarker.setMap(null);newMarker=null;}
@@ -1608,6 +1609,7 @@ function pickForMeasure(i){
 
   if(measurePick.length===1){
     document.getElementById('measure-hint').innerHTML='이제 <b>샵 2</b>를 클릭하세요.';
+    toast('A: '+SHOPS[i].shop);
   }else{
     const [a,b]=measurePick, pa=overlays[a].pos, pb=overlays[b].pos;
     const m=haversine(pa.getLat(),pa.getLng(),pb.getLat(),pb.getLng());
@@ -2302,7 +2304,7 @@ function mbShowInfo(m){
     <div class="sv">${m.svc}</div><div class="ad">${m.addr}</div>
     <a href="tel:${m.ph}">${m.ph}</a>`;
   el.querySelector('.x').onclick=mbCloseInfo;
-  mbInfoOv=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(m.lat,m.lng),content:el,yAnchor:0,xAnchor:0,zIndex:30001});
+  mbInfoOv=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(m.lat,m.lng),content:el,yAnchor:0,xAnchor:0,zIndex:30001,clickable:true});
   mbInfoOv.setMap(map);
 }
 function mbGeocodeAll(cb){
@@ -2334,7 +2336,7 @@ function mbGeocodeAll(cb){
 function mbAddMark(m){
   const el=document.createElement('div'); el.className='mbdot'; el.title='⚫ '+m.nm;
   el.onclick=e=>{ e.stopPropagation(); mbShowInfo(m); };
-  const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(m.lat,m.lng),content:el,yAnchor:.5,xAnchor:.5,zIndex:25000});
+  const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(m.lat,m.lng),content:el,yAnchor:.5,xAnchor:.5,zIndex:25000,clickable:true});
   if(mbOn) ov.setMap(map);
   mbMarks.push(ov);
 }
