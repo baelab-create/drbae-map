@@ -569,7 +569,25 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
 }
 
 /* ---------- map ---------- */
+/* 사이드바 제거 — 샵 검색은 지도 위 툴바로 이동 (2026-08-18) */
+#aside{display:none!important}
 .map-col{flex:1 1 auto;position:relative;min-width:0}
+.map-search{position:relative}
+.map-search input{width:100%;padding:10px 12px;font-family:inherit;font-size:12.5px;font-weight:600;
+  background:rgba(255,255,255,.97);backdrop-filter:blur(4px);color:var(--ink);
+  border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.map-search input:focus{outline:none;border-color:var(--accent)}
+.msr{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:30;display:none;
+  background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+  max-height:340px;overflow-y:auto;padding:4px}
+.msr.open{display:block}
+.msr .msi{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:none;border:none;
+  cursor:pointer;font-family:inherit;text-align:left;color:var(--ink);border-radius:8px;font-size:12.5px}
+.msr .msi:hover{background:var(--accent-soft)}
+.msr .msi .nm{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.msr .msi .rg{font-size:10.5px;color:var(--mute);flex:0 0 auto}
+.msr .msi .vv{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--mute);flex:0 0 auto}
+.msr .mse{padding:10px 12px;font-size:11.5px;color:var(--mute)}
 #map{width:100%;height:100%;background:#EFE8E7}
 .map-col.measure #map, .map-col.newshop #map{cursor:crosshair}
 
@@ -733,7 +751,7 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
       <div class="qual-t">데이터 검증 요약</div>
       <div id="qual-body"></div>
     </div>
-    <p class="hint" style="margin-top:14px">제품 필터·주문 공백 조건을 걸면 위 숫자도 그 기준으로 바뀝니다 (지도 탭 왼쪽 메뉴).</p>
+    <p class="hint" style="margin-top:14px">특정 샵을 찾으려면 <b>지도</b> 탭 왼쪽 위 검색창을 이용하세요.</p>
   </div>
 </div>
 
@@ -786,6 +804,10 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
     <div id="map"></div>
 
     <div class="toolbar" id="toolbar" style="display:none">
+      <div class="map-search" id="map-search">
+        <input id="ms-q" type="text" placeholder="🔍 샵 검색 (상호명 · 지역 · 주소)" autocomplete="off">
+        <div class="msr" id="ms-results"></div>
+      </div>
       <div class="tool-row">
         <button class="tbtn" id="btn-size" title="원 크기 표현 전환">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="2.2"/><circle cx="12.5" cy="12" r="3.2"/><circle cx="20" cy="12" r="1.6"/></svg>
@@ -807,7 +829,7 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
 
       <div class="card-t" id="panel-measure" style="display:none">
         <h4>📏 두 지점 간 거리</h4>
-        <p class="hint" id="measure-hint">지도의 핀 또는 왼쪽 목록에서 <b>샵 1</b>을 클릭하세요.</p>
+        <p class="hint" id="measure-hint">지도의 핀 또는 위 검색창에서 <b>샵 1</b>을 클릭하세요.</p>
         <div id="measure-result"></div>
       </div>
 
@@ -1465,6 +1487,33 @@ document.getElementById('q').addEventListener('input',e=>{
   });
 });
 
+/* ---------- 지도 위 샵 검색 (사이드바 대체) ---------- */
+const msQ=document.getElementById('ms-q'), msR=document.getElementById('ms-results');
+function msClose(){ msR.classList.remove('open'); msR.innerHTML=''; }
+function msRender(){
+  const q=msQ.value.trim().toLowerCase();
+  if(!q){ msClose(); return; }
+  const hits=SHOPS.filter(s=>INVIEW(s)&&(s.shop+s.sido+s.sigungu+s.addr).toLowerCase().includes(q)).slice(0,15);
+  if(!hits.length){ msR.innerHTML='<div class="mse">검색 결과가 없습니다.</div>'; msR.classList.add('open'); return; }
+  msR.innerHTML=hits.map(s=>`<button class="msi" data-i="${s._i}">
+      <span class="nm">${s.shop}</span><span class="rg">${s.sido} ${s.sigungu}</span>
+      <span class="vv">${VALUE(s)>0?fmt(VALUE(s)):'–'}</span></button>`).join('');
+  msR.querySelectorAll('.msi').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    msClose(); msQ.blur();
+    if(!overlays[i]){ toast('이 납품처는 지도에 표시되지 않았습니다'); return; }
+    onShopClick(i,true);            // 거리측정 모드에서는 A/B 선택으로 동작
+  });
+  msR.classList.add('open');
+}
+msQ.addEventListener('input',msRender);
+msQ.addEventListener('focus',msRender);
+msQ.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ msQ.value=''; msClose(); msQ.blur(); }
+  if(e.key==='Enter'){ const b=msR.querySelector('.msi'); if(b) b.click(); }
+});
+document.addEventListener('click',e=>{ if(!document.getElementById('map-search').contains(e.target)) msClose(); });
+
 /* ================= KAKAO MAP ================= */
 let map, geocoder, places, overlays={}, infoOverlay=null, activeIdx=null;
 let mode=null;                       // null | 'measure' | 'new'
@@ -1627,7 +1676,7 @@ function clearMeasure(){
   document.querySelectorAll('.pin .badge').forEach(b=>b.remove());
   measurePick=[];
   document.getElementById('measure-result').innerHTML='';
-  document.getElementById('measure-hint').innerHTML='지도의 핀 또는 왼쪽 목록에서 <b>샵 1</b>을 클릭하세요.';
+  document.getElementById('measure-hint').innerHTML='지도의 핀 또는 위 검색창에서 <b>샵 1</b>을 클릭하세요.';
 }
 function clearNew(){
   if(newMarker){newMarker.setMap(null);newMarker=null;}
@@ -2489,6 +2538,7 @@ function setData(shops, products, meta, label, diag, days){
   document.getElementById('rpmain').innerHTML='<div class="rp-empty">위에서 샵을 선택하면 납품 분석 리포트가 표시됩니다.</div>';
   recalcMax(); updateStats(); buildProducts(); buildList(); buildDormList(); buildRank(); buildReportList(); buildShipList();
   document.getElementById('q').value='';
+  document.getElementById('ms-q').value='';
   document.getElementById('rk-q').value='';
   document.getElementById('rp-q').value='';
   document.getElementById('upov').style.display='none';
