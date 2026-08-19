@@ -99,6 +99,22 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
 .sumrow span{font-size:11.5px;color:var(--mute);font-weight:600}
 .sumrow b{font-family:var(--mono);font-size:13px;font-weight:600}
 .sumrow.tot b{font-size:14.5px;color:var(--accent-deep)}
+/* ── 현황 탭 ── */
+.stpage{flex-direction:column;overflow-y:auto;background:var(--paper)}
+.st-inner{width:100%;max-width:760px;margin:0 auto;padding:26px 20px 40px}
+.st-range{font-size:13px;color:var(--mute);font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.st-range b{color:var(--ink);font-family:var(--mono);font-weight:700}
+.st-file{margin-left:auto;font-size:11px;color:var(--mute);font-weight:500}
+.st-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.st-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.st-card .k{font-size:11.5px;color:var(--mute);font-weight:700;letter-spacing:.03em}
+.st-card b{font-size:24px;font-weight:800;color:var(--ink);font-family:var(--mono);letter-spacing:-.01em}
+.st-card.tot{background:#1B2333;border-color:#1B2333}
+.st-card.tot .k{color:#AEB6C6}
+.st-card.tot b{color:#fff}
+.stpage .qual{margin:0}
+.stpage .hint{font-size:11.5px;color:var(--mute)}
+
 .qual{margin:6px 16px 4px;padding:10px 12px;background:#F4F9F5;border:1px solid #D6EBDB;border-radius:10px}
 .qual-t{font-size:10.5px;font-weight:800;color:#217A33;margin-bottom:6px;letter-spacing:.02em}
 .qrow{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);padding:3px 0}
@@ -690,11 +706,10 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
     <span>전국 피부관리실 · 에스테틱 공급 현황</span>
   </div>
   <nav class="tabs">
-    <button class="tab on" data-pg="map">지도</button>
-    <button class="tab" data-pg="rank">순위 분석</button>
+    <button class="tab on" data-pg="status">현황</button>
+    <button class="tab" data-pg="map">지도</button>
     <button class="tab" data-pg="report">샵 리포트</button>
     <button class="tab" data-pg="newshop">신규샵 위치 리포트</button>
-    <button class="tab" data-pg="ship">일자별 주문</button>
     <button class="tab" data-pg="mb">마이크로 블랙</button>
   </nav>
   <div class="hdr-actions">
@@ -705,7 +720,24 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
 
 </header>
 
-<div class="wrap page-el on" id="page-map">
+<div class="page-el stpage on" id="page-status">
+  <div class="st-inner">
+    <div class="st-range">발송일 <b id="st-from">–</b> ~ <b id="st-to">–</b><span class="st-file" id="st-file"></span></div>
+    <div class="st-grid">
+      <div class="st-card"><span class="k">납품처</span><b id="s-shops">–</b></div>
+      <div class="st-card"><span class="k">시 · 도</span><b id="s-regions">–</b></div>
+      <div class="st-card"><span class="k">주문 건수</span><b id="s-orders">–</b></div>
+      <div class="st-card tot"><span class="k" id="lb-amount">연 주문 합계</span><b id="s-amount">–</b></div>
+    </div>
+    <div class="qual" id="qual" style="display:none">
+      <div class="qual-t">데이터 검증 요약</div>
+      <div id="qual-body"></div>
+    </div>
+    <p class="hint" style="margin-top:14px">제품 필터·주문 공백 조건을 걸면 위 숫자도 그 기준으로 바뀝니다 (지도 탭 왼쪽 메뉴).</p>
+  </div>
+</div>
+
+<div class="wrap page-el" id="page-map">
   <aside id="aside">
     <button class="sheet-handle" id="sheet-handle" aria-label="메뉴 열기/닫기">
       <span class="grip"></span>
@@ -718,24 +750,6 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
       <span class="val" id="dr-from">–</span><span>~</span><span class="val" id="dr-to">–</span>
     </div>
     <div class="sbwrap">
-
-      <section class="sec collapsed" id="sec-summary">
-        <button class="sec-h"><span class="chev2"></span><span class="t">현황 요약</span></button>
-        <div class="sec-b">
-          <div class="sumgrid">
-            <div class="sumrow"><span>납품처</span><b id="s-shops">–</b></div>
-            <div class="sumrow"><span>시 · 도</span><b id="s-regions">–</b></div>
-            <div class="sumrow"><span>주문 건수</span><b id="s-orders">–</b></div>
-            <div class="sumrow tot"><span id="lb-amount">연 주문 합계</span><b id="s-amount">–</b></div>
-          </div>
-          <div class="qual" id="qual" style="display:none">
-            <div class="qual-t">데이터 검증 요약</div>
-            <div id="qual-body"></div>
-          </div>
-        </div>
-      </section>
-
-      
 
       <section class="sec collapsed" id="sec-prod">
         <button class="sec-h"><span class="chev2"></span><span class="t">제품별 현황</span><span class="sec-tag" id="pd-tag">전체</span></button>
@@ -839,7 +853,7 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
         <input type="file" id="file-in" accept=".xlsx,.xls,.csv" hidden>
         <p class="upnote">· 데이터는 <b>브라우저 안에서만</b> 처리되며 어디에도 전송되지 않습니다.<br>
         · 필수 컬럼: 주문번호 · 발송일 · 수취인명 · 상품명 · 옵션정보 · 수량 · 통합배송지 · 1년 주문금액 · 최종 상품별 총 주문금액<br>
-        · 업로드 후 <b>현황 요약</b> 아코디언에서 분류율·병합 결과를 확인할 수 있습니다.</p>
+        · 업로드 후 <b>현황</b> 탭에서 분류율·병합 결과를 확인할 수 있습니다.</p>
         <div class="uperr" id="uperr"></div>
         <button class="uplink" id="up-gh">⚙ GitHub 자동 게시 토큰 설정 / 삭제</button>
         <button class="uplink" id="up-clear">저장된 데이터 · 좌표 캐시 삭제</button>
@@ -878,7 +892,7 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
     <select id="rp-select"><option value="">샵을 선택하세요</option></select>
   </div>
   <div class="rp-main" id="rpmain">
-    <div class="rp-empty">위에서 샵을 선택하거나, <b>순위 분석</b> 탭에서 샵을 클릭하면 납품 분석 리포트가 표시됩니다.</div>
+    <div class="rp-empty">위에서 샵을 선택하면 납품 분석 리포트가 표시됩니다.</div>
   </div>
 </div>
 
@@ -1503,7 +1517,8 @@ function geocodeAll(){
     if(tok!==geoToken) return;                       // 새 업로드로 무효화
     if(k>=SHOPS.length){
       refreshMarkers();
-      if(!bounds.isEmpty()) map.setBounds(bounds);
+      // 지도 탭이 숨겨진 상태(현황 탭 등)에서 setBounds하면 크기 0 기준으로 어긋남 → 탭 진입 시 적용
+      if(!bounds.isEmpty()){ if(curPage==='map') map.setBounds(bounds); else window.__pendingBounds=bounds; }
       try{ localStorage.setItem('drbae_geo_v1', JSON.stringify(GEO)); }catch(e){}
       toast(`${done}곳 표시 완료${failed.length?` · 미매칭 ${failed.length}곳`:''}`);
       if(failed.length) console.warn('미매칭 주소:',failed);
@@ -1585,11 +1600,9 @@ function showInfo(s,pos){
     <div class="row"><span>최근 1년 주문액</span><b>${(s.y1||0)>0?fmtWon(s.y1):'–'}</b></div>
     <div class="row"><span>가장 최근 주문일</span><b>${s.last||'–'}</b></div>
     <div class="info-actions">
-      <button class="ia" data-a="rank">📊 순위에서 보기</button>
       <button class="ia" data-a="rep">📋 샵 리포트</button>
     </div>`;
   el.querySelector('.close').onclick=()=>{infoOverlay.setMap(null);infoOverlay=null;};
-  el.querySelector('[data-a="rank"]').onclick=()=>gotoRank(s._i);
   el.querySelector('[data-a="rep"]').onclick=()=>{ switchPage('report'); selectReport(s._i); };
   infoOverlay=new kakao.maps.CustomOverlay({position:pos,content:el,yAnchor:1,xAnchor:.5,zIndex:9999,clickable:true});
   infoOverlay.setMap(map);
@@ -1800,7 +1813,7 @@ document.querySelectorAll('.dbtn').forEach(b=>b.onclick=()=>{
 
 /* ---------- pages ---------- */
 const PNAME={}; CATALOG.forEach(([c,n])=>PNAME[c]=n);
-let curPage='map', rankSort='annual', recentDesc=true, reportIdx=null;
+let curPage='status', rankSort='annual', recentDesc=true, reportIdx=null;
 
 function switchPage(pg){
   curPage=pg;
@@ -1811,7 +1824,8 @@ function switchPage(pg){
   else if(pg==='newshop') document.body.classList.add('pg-newshop');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.pg===pg));
   document.querySelectorAll('.page-el').forEach(el=>el.classList.toggle('on',el.id==='page-'+pg));
-  if(pg==='map'&&map) setTimeout(()=>map.relayout(),60);
+  if(pg==='map'&&map) setTimeout(()=>{ map.relayout();
+    if(window.__pendingBounds){ map.setBounds(window.__pendingBounds); window.__pendingBounds=null; } },60);
   if(pg==='newshop'){
     requestAnimationFrame(()=>{ ensureNMap();
       setTimeout(()=>{ if(nmap){ nmap.relayout(); if(nsPos) nmap.setCenter(nsPos); } },120);
@@ -2448,6 +2462,9 @@ function setData(shops, products, meta, label, diag, days){
   // 표시 갱신
   document.getElementById('dr-from').textContent=META.from;
   document.getElementById('dr-to').textContent=META.to;
+  document.getElementById('st-from').textContent=META.from;
+  document.getElementById('st-to').textContent=META.to;
+  document.getElementById('st-file').textContent=label||'';
   document.getElementById('sheet-date').textContent=`${META.from} ~ ${META.to}`;
   document.getElementById('dorm-ref').textContent=META.to;
   document.getElementById('dorm-c3').textContent=SHOPS.filter(s=>isDorm(s,3)).length+'곳';
@@ -2469,7 +2486,7 @@ function setData(shops, products, meta, label, diag, days){
   reportIdx=null; DAYS=days||[]; shipSel=null;
   document.getElementById('sp-detail').innerHTML='<div class="rp-empty">← 날짜를 선택하면 해당일 주문 내역이 표시됩니다.</div>';
   if(typeof nsReset==='function') nsReset();
-  document.getElementById('rpmain').innerHTML='<div class="rp-empty">위에서 샵을 선택하거나, <b>순위 분석</b> 탭에서 샵을 클릭하면 납품 분석 리포트가 표시됩니다.</div>';
+  document.getElementById('rpmain').innerHTML='<div class="rp-empty">위에서 샵을 선택하면 납품 분석 리포트가 표시됩니다.</div>';
   recalcMax(); updateStats(); buildProducts(); buildList(); buildDormList(); buildRank(); buildReportList(); buildShipList();
   document.getElementById('q').value='';
   document.getElementById('rk-q').value='';
