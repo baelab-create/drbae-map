@@ -114,6 +114,42 @@ aside{flex:0 0 340px; background:var(--panel); border-right:1px solid var(--line
 .st-card.tot b{color:#fff}
 .stpage .qual{margin:0}
 .stpage .hint{font-size:11.5px;color:var(--mute)}
+/* 현황 대시보드 */
+.st-inner{max-width:1060px}
+.st-grid.kpi2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.st-card.kpi{position:relative;overflow:hidden}
+.st-card .k small{font-weight:600;color:var(--mute);opacity:.85;margin-left:4px}
+.st-card.kpi b{font-size:27px}
+.delta{font-size:12px;font-weight:700;font-family:var(--mono)}
+.delta.up{color:#1F7A33}
+.delta.dn{color:#C0392B}
+.delta.flat{color:var(--mute)}
+.spark{position:absolute;right:14px;bottom:12px;width:120px;height:38px;opacity:.9}
+.spark svg{display:block;width:100%;height:100%}
+.st-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px;min-width:0}
+.st-panel h3{font-size:13px;font-weight:800;color:var(--ink)}
+.st-panel h3 small{font-size:10.5px;font-weight:600;color:var(--mute);margin-left:6px}
+.st-ph{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.seg{display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:3px}
+.seg button{padding:5px 14px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+  background:none;border:none;border-radius:7px;color:var(--mute)}
+.seg button.on{background:var(--accent);color:#fff}
+.st-chart{position:relative;min-height:200px}
+.st-chart svg{display:block;width:100%;height:auto}
+.st-chart.sm{min-height:150px}
+.st-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-bottom:16px}
+.st-cols .st-panel{margin-bottom:0}
+.st-cols h3{margin-bottom:10px}
+.hbars{display:flex;flex-direction:column;gap:7px}
+.hbar{display:grid;grid-template-columns:96px 1fr 64px;align-items:center;gap:8px;font-size:11.5px}
+.hbar .hl{font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbar .ht{height:14px;background:var(--line2);border-radius:0 4px 4px 0;overflow:hidden}
+.hbar .ht i{display:block;height:100%;background:var(--accent);border-radius:0 4px 4px 0;min-width:2px}
+.hbar .hv{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--mute);text-align:right;white-space:nowrap}
+.ttip{position:absolute;z-index:20;pointer-events:none;display:none;background:var(--ink);color:#fff;
+  border-radius:8px;padding:7px 10px;font-size:11px;line-height:1.5;box-shadow:var(--shadow);white-space:nowrap}
+.ttip b{font-family:var(--mono);font-weight:700}
+.ttip .td{color:#AEB6C6;font-size:10px}
 
 .qual{margin:6px 16px 4px;padding:10px 12px;background:#F4F9F5;border:1px solid #D6EBDB;border-radius:10px}
 .qual-t{font-size:10.5px;font-weight:800;color:#217A33;margin-bottom:6px;letter-spacing:.02em}
@@ -741,12 +777,46 @@ body.pg-mb{--accent:#1B2333;--accent-deep:#0F1420;--accent-soft:#E7E9EF}
 <div class="page-el stpage on" id="page-status">
   <div class="st-inner">
     <div class="st-range">발송일 <b id="st-from">–</b> ~ <b id="st-to">–</b><span class="st-file" id="st-file"></span></div>
+
+    <div class="st-grid kpi2">
+      <div class="st-card kpi">
+        <span class="k">이번 주 매출 <small id="kw-sub"></small></span>
+        <b id="kw-amt">–</b>
+        <span class="delta" id="kw-delta"></span>
+        <div class="spark" id="kw-spark"></div>
+      </div>
+      <div class="st-card kpi">
+        <span class="k">이번 달 매출 <small id="km-sub"></small></span>
+        <b id="km-amt">–</b>
+        <span class="delta" id="km-delta"></span>
+        <div class="spark" id="km-spark"></div>
+      </div>
+    </div>
+
     <div class="st-grid">
       <div class="st-card"><span class="k">납품처</span><b id="s-shops">–</b></div>
       <div class="st-card"><span class="k">시 · 도</span><b id="s-regions">–</b></div>
       <div class="st-card"><span class="k">주문 건수</span><b id="s-orders">–</b></div>
       <div class="st-card tot"><span class="k" id="lb-amount">연 주문 합계</span><b id="s-amount">–</b></div>
     </div>
+
+    <div class="st-panel">
+      <div class="st-ph">
+        <h3>매출 추이</h3>
+        <div class="seg">
+          <button id="tg-week" class="on">주간</button>
+          <button id="tg-month">월간</button>
+        </div>
+      </div>
+      <div class="st-chart" id="trend-chart"><p class="hint" style="padding:20px">데이터를 불러오면 표시됩니다.</p></div>
+    </div>
+
+    <div class="st-cols">
+      <div class="st-panel"><h3>시·도별 매출 <small>TOP 8 · 기간 누적</small></h3><div class="hbars" id="rg-bars"></div></div>
+      <div class="st-panel"><h3>제품별 매출 <small>TOP 8 · 기간 누적</small></h3><div class="hbars" id="pd-bars"></div></div>
+      <div class="st-panel"><h3>월별 신규 납품처 <small>첫 주문 기준</small></h3><div class="st-chart sm" id="new-chart"></div></div>
+    </div>
+
     <div class="qual" id="qual" style="display:none">
       <div class="qual-t">데이터 검증 요약</div>
       <div id="qual-body"></div>
@@ -1860,6 +1930,149 @@ document.querySelectorAll('.dbtn').forEach(b=>b.onclick=()=>{
   applyFilters();
 });
 
+/* ---------- 현황 대시보드 (주간·월간 매출 인포그래픽) ---------- */
+let stMode='week';
+const ST_C={bar:'#3B5BDB', barHot:'#2C3E9E', barSoft:'#C7D2F5', teal:'#0C8599', grid:'#EEF1F6', axis:'#6B7480'};
+const parseYMD=s=>{ const [y,m,d]=s.split('.').map(Number); return new Date(y,m-1,d); };
+const monday=d=>{ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; };
+const mdLabel=d=>(d.getMonth()+1)+'/'+d.getDate();
+
+function stBuckets(){
+  // DAYS(일자별 원장) → 주간 12개 · 월간 12개 연속 버킷 (빈 기간 0)
+  const today=new Date();
+  const wk=[], mo=[];
+  const w0=monday(today);
+  for(let i=11;i>=0;i--){ const s=new Date(w0); s.setDate(s.getDate()-7*i);
+    const e=new Date(s); e.setDate(e.getDate()+6);
+    wk.push({s,e,label:mdLabel(s),full:`${mdLabel(s)}~${mdLabel(e)}`,total:0,n:0}); }
+  for(let i=11;i>=0;i--){ const d=new Date(today.getFullYear(),today.getMonth()-i,1);
+    const k=d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0');
+    mo.push({k,label:String(d.getFullYear()).slice(2)+'.'+String(d.getMonth()+1).padStart(2,'0'),
+      full:d.getFullYear()+'년 '+(d.getMonth()+1)+'월',total:0,n:0}); }
+  DAYS.forEach(day=>{
+    const dt=parseYMD(day.d), t=dt.getTime();
+    const w=wk.find(b=>t>=b.s.getTime()&&t<=b.e.getTime()+86399999);
+    if(w){ w.total+=day.total; w.n+=day.n; }
+    const mk=day.d.slice(0,7);
+    const m=mo.find(b=>b.k===mk);
+    if(m){ m.total+=day.total; m.n+=day.n; }
+  });
+  return {wk,mo};
+}
+function niceStep(max){ const raw=max/4, p=Math.pow(10,Math.floor(Math.log10(raw||1)));
+  for(const m of [1,2,2.5,5,10]) if(m*p>=raw) return m*p; return 10*p; }
+function stTip(host){
+  let t=host.querySelector('.ttip');
+  if(!t){ t=document.createElement('div'); t.className='ttip'; host.appendChild(t); }
+  return t;
+}
+/* 세로 막대 차트 (SVG) — 상단만 4px 라운드, 호버 툴팁, 최댓값·마지막 값만 직접 라벨 */
+function renderCols(host, buckets, opt){
+  const color=opt.color||ST_C.bar, hot=opt.hot||ST_C.barHot;
+  const W=960,H=250,L=52,R=12,T=20,B=32,pw=W-L-R,ph=H-T-B;
+  const max=Math.max(...buckets.map(b=>b.total),1);
+  const step=niceStep(max), top=Math.ceil(max/step)*step;
+  const y=v=>T+ph-(v/top)*ph;
+  const slot=pw/buckets.length, bw=Math.min(slot*0.62,54);
+  let g='';
+  for(let v=step;v<=top;v+=step)
+    g+=`<line x1="${L}" y1="${y(v)}" x2="${W-R}" y2="${y(v)}" stroke="${ST_C.grid}"/>`
+      +`<text x="${L-7}" y="${y(v)+3.5}" text-anchor="end" font-size="10.5" fill="${ST_C.axis}">${fmt(v)}</text>`;
+  const maxI=buckets.reduce((mi,b,i)=>b.total>buckets[mi].total?i:mi,0);
+  let bars='',labels='';
+  buckets.forEach((b,i)=>{
+    const cx=L+slot*i+slot/2, x=cx-bw/2, yy=y(b.total), h=T+ph-yy, r=Math.min(4,h);
+    if(b.total>0)
+      bars+=`<path class="stb" data-i="${i}" d="M${x} ${T+ph} V${yy+r} Q${x} ${yy} ${x+r} ${yy} H${x+bw-r} Q${x+bw} ${yy} ${x+bw} ${yy+r} V${T+ph} Z" fill="${color}"/>`;
+    else
+      bars+=`<rect class="stb" data-i="${i}" x="${x}" y="${T+ph-1.5}" width="${bw}" height="1.5" fill="${ST_C.grid}"/>`;
+    bars+=`<rect class="sth" data-i="${i}" x="${L+slot*i}" y="${T}" width="${slot}" height="${ph}" fill="transparent"/>`;
+    if((i===maxI&&b.total>0)||i===buckets.length-1)
+      labels+=`<text x="${cx}" y="${yy-6}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--ink)">${b.total>0?fmt(b.total):''}</text>`;
+    const every=buckets.length>12?2:1;
+    if(i%every===0||i===buckets.length-1)
+      labels+=`<text x="${cx}" y="${H-10}" text-anchor="middle" font-size="10.5" fill="${ST_C.axis}">${b.label}</text>`;
+  });
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opt.aria||'막대 차트'}">
+    <line x1="${L}" y1="${T+ph}" x2="${W-R}" y2="${T+ph}" stroke="#C9CFDB"/>${g}${bars}${labels}</svg>`;
+  const tip=stTip(host), svg=host.querySelector('svg');
+  host.querySelectorAll('.sth').forEach(hz=>{
+    const i=+hz.dataset.i, b=buckets[i];
+    const mark=host.querySelector(`.stb[data-i="${i}"]`);
+    hz.addEventListener('mouseenter',()=>{
+      if(mark&&b.total>0) mark.setAttribute('fill',hot);
+      tip.innerHTML=`<span class="td">${b.full}</span><br><b>${b.total.toLocaleString('ko-KR')}원</b>${opt.unit?'':' · '+b.n+'건'}${opt.unit?('<br>'+b.n+opt.unit):''}`;
+      tip.style.display='block';
+      const rr=svg.getBoundingClientRect(), hr=host.getBoundingClientRect();
+      const px=rr.left-hr.left+(L+ (pw/buckets.length)*i + (pw/buckets.length)/2)/W*rr.width;
+      tip.style.left=Math.max(4,Math.min(px-tip.offsetWidth/2, hr.width-tip.offsetWidth-4))+'px';
+      tip.style.top=(rr.top-hr.top+ (y(b.total))/H*rr.height - tip.offsetHeight - 8)+'px';
+    });
+    hz.addEventListener('mouseleave',()=>{ if(mark&&b.total>0) mark.setAttribute('fill',color); tip.style.display='none'; });
+  });
+}
+function renderSpark(host, buckets, color){
+  const W=120,Hh=38,max=Math.max(...buckets.map(b=>b.total),1), n=buckets.length, sw=W/n;
+  let s='';
+  buckets.forEach((b,i)=>{ const h=Math.max(b.total/max*(Hh-4),1.5), x=sw*i+1.5, bw=sw-3;
+    s+=`<rect x="${x}" y="${Hh-h}" width="${bw}" height="${h}" rx="1.5" fill="${i===n-1?color:ST_C.barSoft}"/>`; });
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" aria-hidden="true">${s}</svg>`;
+}
+function stDelta(el, cur, prev, word){
+  if(prev>0){
+    const p=(cur-prev)/prev*100, up=p>=0.05, dn=p<=-0.05;
+    el.className='delta '+(up?'up':dn?'dn':'flat');
+    el.textContent=(up?'▲ ':dn?'▼ ':'— ')+Math.abs(p).toFixed(1)+'% '+word;
+  }else{ el.className='delta flat'; el.textContent='— '+word+' 데이터 없음'; }
+}
+function renderHBars(host, rows){
+  const max=Math.max(...rows.map(r=>r.v),1);
+  host.innerHTML=rows.map(r=>`<div class="hbar" title="${r.l} · ${r.v.toLocaleString('ko-KR')}원">
+    <span class="hl">${r.l}</span>
+    <span class="ht"><i style="width:${Math.max(r.v/max*100,1)}%"></i></span>
+    <span class="hv">${fmt(r.v)}</span></div>`).join('');
+}
+function renderStatus(){
+  const tc=document.getElementById('trend-chart');
+  if(!DAYS.length){ tc.innerHTML='<p class="hint" style="padding:20px">데이터를 불러오면 표시됩니다.</p>'; return; }
+  const {wk,mo}=stBuckets();
+  // KPI: 이번 주 / 이번 달 (전기 대비)
+  const cw=wk[wk.length-1], pw2=wk[wk.length-2], cm=mo[mo.length-1], pm=mo[mo.length-2];
+  document.getElementById('kw-sub').textContent='('+cw.full+' · 진행 중)';
+  document.getElementById('km-sub').textContent='('+cm.full+' · 진행 중)';
+  document.getElementById('kw-amt').textContent=fmt(cw.total)+'원';
+  document.getElementById('km-amt').textContent=fmt(cm.total)+'원';
+  stDelta(document.getElementById('kw-delta'), cw.total, pw2.total, '전주 대비');
+  stDelta(document.getElementById('km-delta'), cm.total, pm.total, '전월 대비');
+  renderSpark(document.getElementById('kw-spark'), wk, ST_C.bar);
+  renderSpark(document.getElementById('km-spark'), mo, ST_C.bar);
+  // 매출 추이 (주간/월간 토글)
+  renderCols(tc, stMode==='week'?wk:mo, {aria:stMode==='week'?'주간 매출 추이':'월간 매출 추이'});
+  // 시·도별 / 제품별 TOP 8
+  const bySido={};
+  SHOPS.forEach(s=>{ bySido[s.sido]=(bySido[s.sido]||0)+s.total; });
+  renderHBars(document.getElementById('rg-bars'),
+    Object.entries(bySido).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([l,v])=>({l:l.replace(/(특별자치|특별|광역)시?도?$/,''),v})));
+  renderHBars(document.getElementById('pd-bars'),
+    PRODUCTS.filter(p=>p.c!=='BASE').sort((a,b)=>b.amt-a.amt).slice(0,8).map(p=>({l:p.n,v:p.amt})));
+  // 월별 신규 납품처 (첫 주문 월 기준)
+  const nb=mo.map(m=>({...m,total:0,n:0}));
+  SHOPS.forEach(s=>{ if(!s.first) return; const k=s.first.slice(0,7);
+    const b=nb.find(x=>x.k===k); if(b){ b.total+=1; b.n+=1; } });
+  const nc=document.getElementById('new-chart');
+  renderCols(nc, nb, {color:ST_C.teal, hot:'#0A6E80', unit:'곳 신규', aria:'월별 신규 납품처'});
+  // 신규 차트 툴팁은 '원' 표기가 어색하므로 곳 수로 교체
+  nc.querySelectorAll('.sth').forEach(hz=>{
+    const b=nb[+hz.dataset.i];
+    hz.addEventListener('mouseenter',()=>{ const t=nc.querySelector('.ttip');
+      t.innerHTML=`<span class="td">${b.full}</span><br><b>${b.total}곳</b> 신규`; });
+  });
+}
+document.getElementById('tg-week').onclick=()=>{ stMode='week';
+  document.getElementById('tg-week').classList.add('on'); document.getElementById('tg-month').classList.remove('on'); renderStatus(); };
+document.getElementById('tg-month').onclick=()=>{ stMode='month';
+  document.getElementById('tg-month').classList.add('on'); document.getElementById('tg-week').classList.remove('on'); renderStatus(); };
+
 /* ---------- pages ---------- */
 const PNAME={}; CATALOG.forEach(([c,n])=>PNAME[c]=n);
 let curPage='status', rankSort='annual', recentDesc=true, reportIdx=null;
@@ -2537,6 +2750,7 @@ function setData(shops, products, meta, label, diag, days){
   if(typeof nsReset==='function') nsReset();
   document.getElementById('rpmain').innerHTML='<div class="rp-empty">위에서 샵을 선택하면 납품 분석 리포트가 표시됩니다.</div>';
   recalcMax(); updateStats(); buildProducts(); buildList(); buildDormList(); buildRank(); buildReportList(); buildShipList();
+  renderStatus();
   document.getElementById('q').value='';
   document.getElementById('ms-q').value='';
   document.getElementById('rk-q').value='';
